@@ -52,17 +52,20 @@ fi
 if ! command -v graphify &> /dev/null; then
     echo "Instalando Graphify..."
     
-    # En sistemas Linux modernos (PEP 668) PIP bloquea instalaciones globales.
-    # Usamos la flag --break-system-packages porque estamos instalando en --user (aislado del root)
-    if ! python3 -m pip --version &> /dev/null; then
-        echo "🔧 Pip no detectado. Instalando pip en el entorno de usuario..."
-        curl -sS https://bootstrap.pypa.io/get-pip.py | python3 --break-system-packages
+    # Instalación segura usando pipx (recomendado por PEP 668) o venv
+    if ! command -v pipx &> /dev/null; then
+        echo "🔧 Pipx no detectado. Intentando instalar mediante apt..."
+        sudo apt update && sudo apt install -y pipx || true
     fi
     
     if command -v pipx &> /dev/null; then
+        pipx ensurepath
         pipx install graphifyy
     else
-        python3 -m pip install --user --break-system-packages graphifyy || echo "⚠️ Error instalando Graphify. Instala pipx (sudo apt install pipx) e inténtalo de nuevo."
+        echo "⚠️ pipx no disponible. Creando entorno virtual aislado para Graphify..."
+        python3 -m venv "$HOME/.graphify-env"
+        "$HOME/.graphify-env/bin/pip" install graphifyy
+        ln -sf "$HOME/.graphify-env/bin/graphify" "$HOME/.local/bin/graphify"
     fi
     echo "✅ Graphify instalado."
 else
