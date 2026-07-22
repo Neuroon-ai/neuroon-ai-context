@@ -27,28 +27,21 @@ if ! command -v python3 &> /dev/null; then echo "⚠️ ADVERTENCIA: python3 no 
 if ! command -v java &> /dev/null; then echo "⚠️ ADVERTENCIA: java (JDK 21) no está instalado. Requerido para backend Java."; fi
 if ! command -v docker &> /dev/null; then echo "⚠️ ADVERTENCIA: docker no está instalado. Requerido para MCP Qdrant/BBDD."; fi
 
-# 4. Instalar Hermes Agent
-if ! command -v hermes &> /dev/null; then
-    echo "Instalando Hermes Agent..."
-    curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
-    
-    echo "Configurando perfil base de Hermes..."
-    mkdir -p "$HOME/.hermes"
-    if [ ! -f "$HOME/.hermes/config.yaml" ] && [ -f "hermes-config.yaml.example" ]; then
-        cp hermes-config.yaml.example "$HOME/.hermes/config.yaml"
-        echo "✅ Configuración base copiada."
-    fi
-    echo "✅ Hermes Agent instalado."
+# 4. Instalar Claude Code CLI
+if ! command -v claude &> /dev/null; then
+    echo "Instalando Claude Code CLI..."
+    npm install -g @anthropic-ai/claude-code
+    echo "✅ Claude Code instalado."
 else
-    echo "✅ Hermes Agent ya está instalado."
+    echo "✅ Claude Code ya está instalado."
 fi
 
 # 5. Instalar RTK (Rust Token Killer)
 if ! command -v rtk &> /dev/null; then
     echo "Instalando RTK (Rust Token Killer)..."
     curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
-    echo "Configurando RTK para Hermes..."
-    rtk init --agent hermes
+    echo "Configurando RTK para Claude Code..."
+    rtk init -g
     echo "✅ RTK instalado."
 else
     echo "✅ RTK ya está instalado."
@@ -70,7 +63,8 @@ fi
 chmod +x install-factory.sh
 echo "=========================================================="
 echo "🎉 MÁQUINA APROVISIONADA."
-echo "Para desplegar un worker en esta máquina:"
-echo "1. Haz login: gh auth login"
-echo "2. Usa ./deploy-worker.sh <nombre-del-repo-de-neuroon>"
+echo "Para operar la matriz en esta máquina:"
+echo "1. Haz login en GitHub: gh auth login"
+echo "2. Haz login en Claude Pro: claude login"
+echo "3. Usa ./deploy-worker.sh <nombre-del-repo-de-neuroon> para sincronizar un proyecto."
 echo "=========================================================="

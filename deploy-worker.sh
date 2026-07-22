@@ -35,9 +35,10 @@ else
     echo "⚠️ Este proyecto no tiene init.sh. No está adaptado para Harness Engineering."
 fi
 
-echo "🤖 Arrancando Hermes Gateway para $REPO_NAME..."
-# Levantamos hermes en esta carpeta (tomará el CLAUDE.md y mcp.json local)
-nohup hermes gateway start > hermes-worker.log 2>&1 &
-
-echo "✅ Worker desplegado y agente escuchando en background."
-echo "Puedes ver sus logs con: tail -f $WORK_DIR/hermes-worker.log"
+echo "🤖 Preparando agente Claude Code para $REPO_NAME..."
+# Mostramos la instrucción para arrancar a trabajar en ese repo
+echo "✅ Worker desplegado."
+echo "Para arrancar el agente a trabajar, entra en la carpeta:"
+echo "   cd $WORK_DIR"
+echo "Y ejecuta:"
+echo "   claude -p \"Lee claude-progress.md y feature_list.json. Si hay algo in_progress, ejecútalo siguiendo el arnés.\""
