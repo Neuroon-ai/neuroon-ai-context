@@ -31,6 +31,12 @@
       "type": "infrastructure",
       "framework": "unknown",
       "agent_enabled": false
+    },
+    {
+      "name": "docs-search-widget-neuroon",
+      "type": "documentation",
+      "framework": "unknown",
+      "agent_enabled": false
     }
   ]
 }
