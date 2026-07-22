@@ -30,7 +30,8 @@ if ! command -v docker &> /dev/null; then echo "⚠️ ADVERTENCIA: docker no es
 # 4. Instalar Claude Code CLI
 if ! command -v claude &> /dev/null; then
     echo "Instalando Claude Code CLI..."
-    npm install -g @anthropic-ai/claude-code
+    # NPM 11+ bloquea postinstall scripts por defecto. Añadimos flags para permitir que Claude Code baje sus binarios y evitamos warnings.
+    npm install -g @anthropic-ai/claude-code --foreground-scripts --audit=false --fund=false
     echo "✅ Claude Code instalado."
 else
     echo "✅ Claude Code ya está instalado."
@@ -41,7 +42,7 @@ if ! command -v rtk &> /dev/null; then
     echo "Instalando RTK (Rust Token Killer)..."
     curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
     echo "Configurando RTK para Claude Code..."
-    rtk init -g
+    yes | rtk init -g
     echo "✅ RTK instalado."
 else
     echo "✅ RTK ya está instalado."
