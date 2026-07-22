@@ -19,6 +19,12 @@
       "type": "plugin",
       "framework": "wordpress/php",
       "agent_enabled": false
+    },
+    {
+      "name": "app-search-widget-neuroon",
+      "type": "frontend-widget",
+      "framework": "unknown",
+      "agent_enabled": false
     }
   ]
 }
