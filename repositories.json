@@ -1,0 +1,12 @@
+{
+  "org": "Neuroon-ai",
+  "base_path": "$HOME/workers",
+  "projects": [
+    {
+      "name": "api-search-neuroon",
+      "type": "backend",
+      "framework": "spring-boot",
+      "agent_enabled": true
+    }
+  ]
+}
