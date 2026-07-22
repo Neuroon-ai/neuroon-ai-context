@@ -51,10 +51,17 @@ fi
 # 6. Instalar Graphify (Grafo Semántico)
 if ! command -v graphify &> /dev/null; then
     echo "Instalando Graphify..."
+    
+    # Asegurarnos de que pip está disponible
+    if ! python3 -m pip --version &> /dev/null; then
+        echo "🔧 Pip no detectado. Instalando pip en el entorno de usuario..."
+        curl -sS https://bootstrap.pypa.io/get-pip.py | python3
+    fi
+    
     if command -v pipx &> /dev/null; then
         pipx install graphifyy
     else
-        python3 -m pip install --user graphifyy
+        python3 -m pip install --user graphifyy || echo "⚠️ Error instalando Graphify. Verifica permisos de Python."
     fi
     echo "✅ Graphify instalado."
 else
