@@ -7,6 +7,12 @@
       "type": "backend",
       "framework": "spring-boot",
       "agent_enabled": true
+    },
+    {
+      "name": "app-search-neuroon",
+      "type": "frontend",
+      "framework": "unknown", 
+      "agent_enabled": false
     }
   ]
 }
