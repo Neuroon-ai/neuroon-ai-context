@@ -25,6 +25,12 @@
       "type": "frontend-widget",
       "framework": "unknown",
       "agent_enabled": false
+    },
+    {
+      "name": "status",
+      "type": "infrastructure",
+      "framework": "unknown",
+      "agent_enabled": false
     }
   ]
 }
