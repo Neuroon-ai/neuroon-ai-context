@@ -13,6 +13,12 @@
       "type": "frontend",
       "framework": "unknown", 
       "agent_enabled": false
+    },
+    {
+      "name": "wordpress-plugin-neuroon-search",
+      "type": "plugin",
+      "framework": "wordpress/php",
+      "agent_enabled": false
     }
   ]
 }
