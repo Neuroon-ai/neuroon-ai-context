@@ -52,16 +52,17 @@ fi
 if ! command -v graphify &> /dev/null; then
     echo "Instalando Graphify..."
     
-    # Asegurarnos de que pip está disponible
+    # En sistemas Linux modernos (PEP 668) PIP bloquea instalaciones globales.
+    # Usamos la flag --break-system-packages porque estamos instalando en --user (aislado del root)
     if ! python3 -m pip --version &> /dev/null; then
         echo "🔧 Pip no detectado. Instalando pip en el entorno de usuario..."
-        curl -sS https://bootstrap.pypa.io/get-pip.py | python3
+        curl -sS https://bootstrap.pypa.io/get-pip.py | python3 --break-system-packages
     fi
     
     if command -v pipx &> /dev/null; then
         pipx install graphifyy
     else
-        python3 -m pip install --user graphifyy || echo "⚠️ Error instalando Graphify. Verifica permisos de Python."
+        python3 -m pip install --user --break-system-packages graphifyy || echo "⚠️ Error instalando Graphify. Instala pipx (sudo apt install pipx) e inténtalo de nuevo."
     fi
     echo "✅ Graphify instalado."
 else
