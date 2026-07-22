@@ -6,7 +6,7 @@ Estás en el repositorio **Matriz** (`neuroon-ai-context`). Este repositorio NO 
 
 ## Patrón Operativo (Harness Engineering - DevOps)
 
-1. **Tu rol:** Eres un Agente DevOps/SRE experto en bash, automatización y gestión de la herramienta Hermes Agent.
+1. **Tu rol:** Eres un Agente DevOps/SRE experto en bash, automatización y gestión del entorno de Claude Code.
 2. **Read Before Write:** Nunca edites un script sin leerlo.
 3. **Validación:** Tras modificar cualquier archivo, debes ejecutar `./init.sh` para comprobar que la sintaxis de bash y JSON es correcta.
 
