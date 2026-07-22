@@ -10,12 +10,12 @@ fi
 
 REPO_NAME=$1
 ORG="Neuroon-ai"
-WORK_DIR="$HOME/workers/$REPO_NAME"
+WORK_DIR="./workspaces/$REPO_NAME"
 
 echo "=== 🚀 Desplegando Worker para $REPO_NAME ==="
 
-mkdir -p "$HOME/workers"
-cd "$HOME/workers"
+mkdir -p "./workspaces"
+cd "./workspaces"
 
 # Clonar si no existe, hacer pull si existe
 if [ ! -d "$REPO_NAME" ]; then
