@@ -37,6 +37,12 @@
       "type": "documentation",
       "framework": "unknown",
       "agent_enabled": false
+    },
+    {
+      "name": "api-search-engine",
+      "type": "backend-engine",
+      "framework": "python",
+      "agent_enabled": false
     }
   ]
 }
