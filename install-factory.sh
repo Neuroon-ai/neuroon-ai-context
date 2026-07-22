@@ -31,6 +31,13 @@ if ! command -v docker &> /dev/null; then echo "⚠️ ADVERTENCIA: docker no es
 if ! command -v hermes &> /dev/null; then
     echo "Instalando Hermes Agent..."
     curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+    
+    echo "Configurando perfil base de Hermes..."
+    mkdir -p "$HOME/.hermes"
+    if [ ! -f "$HOME/.hermes/config.yaml" ] && [ -f "hermes-config.yaml.example" ]; then
+        cp hermes-config.yaml.example "$HOME/.hermes/config.yaml"
+        echo "✅ Configuración base copiada."
+    fi
     echo "✅ Hermes Agent instalado."
 else
     echo "✅ Hermes Agent ya está instalado."
