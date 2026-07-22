@@ -72,6 +72,13 @@ else
     echo "✅ Graphify ya está instalado."
 fi
 
+# 7. Instalar Claude-Mem (Memoria Persistente entre Sesiones)
+# Se instala a nivel de usuario/máquina, no de proyecto. Da continuidad
+# automática a CUALQUIER worker que arranquemos con claude-code.
+echo "Instalando Claude-Mem (memoria persistente entre sesiones)..."
+npx --yes claude-mem install || echo "⚠️ No se pudo instalar claude-mem automáticamente. Instálalo manualmente con: npx claude-mem install"
+echo "✅ Claude-Mem configurado."
+
 chmod +x install-factory.sh
 echo "=========================================================="
 echo "🎉 MÁQUINA APROVISIONADA."
