@@ -1,0 +1,69 @@
+#!/bin/bash
+# Script de aprovisionamiento de Servidor (Matriz) para Agentes de IA
+set -e
+
+echo "=== 🏭 Provisionando Máquina Matriz (Neuroon AI Factory) ==="
+
+# 1. Configurar PATH local
+mkdir -p "$HOME/.local/bin"
+export PATH="$HOME/.local/bin:$HOME/.hermes/bin:$PATH"
+
+# 2. Instalar GitHub CLI (gh) si no existe
+echo "Verificando dependencias del sistema..."
+if ! command -v gh &> /dev/null; then
+    echo "Descargando e instalando GitHub CLI (gh)..."
+    GH_VERSION=$(curl -s "https://api.github.com/repos/cli/cli/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    curl -sSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" -o gh.tar.gz
+    tar xzf gh.tar.gz
+    mv gh_${GH_VERSION}_linux_amd64/bin/gh "$HOME/.local/bin/"
+    rm -rf gh.tar.gz gh_${GH_VERSION}_linux_amd64
+    echo "✅ GitHub CLI instalado. RECUERDA HACER: gh auth login"
+else
+    echo "✅ GitHub CLI ya está instalado."
+fi
+
+# 3. Validar runtimes de sistema requeridos por los proyectos
+if ! command -v python3 &> /dev/null; then echo "⚠️ ADVERTENCIA: python3 no está instalado. Requerido para scripts."; fi
+if ! command -v java &> /dev/null; then echo "⚠️ ADVERTENCIA: java (JDK 21) no está instalado. Requerido para backend Java."; fi
+if ! command -v docker &> /dev/null; then echo "⚠️ ADVERTENCIA: docker no está instalado. Requerido para MCP Qdrant/BBDD."; fi
+
+# 4. Instalar Hermes Agent
+if ! command -v hermes &> /dev/null; then
+    echo "Instalando Hermes Agent..."
+    curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+    echo "✅ Hermes Agent instalado."
+else
+    echo "✅ Hermes Agent ya está instalado."
+fi
+
+# 5. Instalar RTK (Rust Token Killer)
+if ! command -v rtk &> /dev/null; then
+    echo "Instalando RTK (Rust Token Killer)..."
+    curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+    echo "Configurando RTK para Hermes..."
+    rtk init --agent hermes
+    echo "✅ RTK instalado."
+else
+    echo "✅ RTK ya está instalado."
+fi
+
+# 6. Instalar Graphify (Grafo Semántico)
+if ! command -v graphify &> /dev/null; then
+    echo "Instalando Graphify..."
+    if command -v pipx &> /dev/null; then
+        pipx install graphifyy
+    else
+        python3 -m pip install --user graphifyy
+    fi
+    echo "✅ Graphify instalado."
+else
+    echo "✅ Graphify ya está instalado."
+fi
+
+chmod +x install-factory.sh
+echo "=========================================================="
+echo "🎉 MÁQUINA APROVISIONADA."
+echo "Para desplegar un worker en esta máquina:"
+echo "1. Haz login: gh auth login"
+echo "2. Usa ./deploy-worker.sh <nombre-del-repo-de-neuroon>"
+echo "=========================================================="
