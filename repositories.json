@@ -11,7 +11,7 @@
       "harness_ready": false,
       "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 2 WARN (solo falta .gitignore cubriendo target/ y graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
       "graph_ready": false,
-      "graph_notes": "Auditado el 2026-07-24: graphify operativo en la máquina pero graphify-out/graph.json no existe todavía — correr tools/sync-graph.sh.",
+      "graph_notes": "Bootstrapeado el 2026-07-24 con tools/sync-graph.sh: graph.json (23911 nodos, 69635 edges, 675 comunidades) + hooks post-commit/post-checkout + merge driver, todo en verde en S6. 122 archivos .sql no se procesaron (falta tree_sitter_sql — pip install \"graphifyy[sql]\"). Pasar a true cuando se sostenga varias rondas.",
       "mcp_servers": [
         "graphify"
       ]

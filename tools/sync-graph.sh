@@ -54,6 +54,7 @@ if ! grep -qxF "/graphify-out/cache/" .gitignore 2>/dev/null; then
 # graphify-out/ SE COMMITEA (patrón oficial de graphify, "Team setup").
 /graphify-out/cost.json
 /graphify-out/cache/
+/graphify-out/.rebuild.lock
 /graphify-out/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 IGNORE
   echo "🔧 Exclusiones de graphify añadidas a .gitignore."
