@@ -261,7 +261,11 @@ fi
 # "git push:*" cubrimos -u/--set-upstream/etc.; el deny de push directo a la
 # rama por defecto en .claude/settings.json (tools/scaffold-harness.sh) sigue
 # aplicando y gana siempre sobre este allow.
-ALLOWED_TOOLS='Edit,Write,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git checkout:*),Bash(git switch:*),Bash(git push:*),Bash(git pull:*),Bash(./mvnw:*),Bash(mvn:*),Bash(npm:*),Bash(npx:*),Bash(python3:*),Bash(pytest:*),Bash(gh issue:*),Bash(gh pr:*),Bash(./init.sh),Bash(./scripts/verify-feature.sh:*),Bash(openspec:*),Bash(graphify:*)'
+# git rm: faltaba en una versión anterior — bloqueó a un worker real que
+# necesitaba borrar 4 ficheros como parte del alcance de una Issue (retirar
+# una feature, no solo añadir código). Sin esto, cualquier Issue de tipo
+# "eliminar X" se queda parada pidiendo aprobación manual.
+ALLOWED_TOOLS='Edit,Write,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git rm:*),Bash(git commit:*),Bash(git checkout:*),Bash(git switch:*),Bash(git push:*),Bash(git pull:*),Bash(./mvnw:*),Bash(mvn:*),Bash(npm:*),Bash(npx:*),Bash(python3:*),Bash(pytest:*),Bash(gh issue:*),Bash(gh pr:*),Bash(./init.sh),Bash(./scripts/verify-feature.sh:*),Bash(openspec:*),Bash(graphify:*)'
 
 echo ""
 if [ "$AUDIT_OK" -ne 1 ]; then
