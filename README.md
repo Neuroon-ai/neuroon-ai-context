@@ -26,7 +26,8 @@ claude login
 # 4. Planifica una feature (crea la Issue + el change de OpenSpec)
 ./plan-feature.sh api-search-neuroon
 
-# 5. Arranca un worker sobre un repositorio concreto
+# 5. Despliega y ARRANCA el worker directamente sobre un repositorio
+#    (autónomo: sin confirmación y/N, solo se frena si el arnés audita en rojo)
 ./deploy-worker.sh api-search-neuroon
 # ...o atado a una Issue concreta ya planificada:
 ./deploy-worker.sh api-search-neuroon --issue 292
@@ -38,7 +39,7 @@ claude login
 |--------|-----|
 | `install-factory.sh` | Aprovisiona la máquina Matriz (dependencias globales, una sola vez). |
 | `sync-fleet.sh` | Clona/actualiza todos los repos declarados en `repositories.json`. |
-| `deploy-worker.sh <repo> [--yes] [--issue <N>]` | Despliega un repo (arnés, grafo, MCP) y muestra el comando para arrancar el worker sobre él. Con `--issue <N>`, el worker queda asignado explícitamente a esa Issue en vez de elegir una él solo. |
+| `deploy-worker.sh <repo> [--yes] [--issue <N>]` | Despliega un repo (arnés, grafo, MCP) y **arranca el worker directamente** (`exec claude -p ...`), sin pedir confirmación — autónomo. Solo no lanza si el arnés audita con CRITICAL en rojo (en ese caso imprime el comando para lanzarlo a mano tras revisar). Con `--issue <N>`, el worker queda asignado explícitamente a esa Issue en vez de elegir una él solo. |
 | `plan-feature.sh <repo>` | Abre una sesión de planificación (Arquitecto/PO) de solo lectura: crea la Issue en GitHub y, si el repo tiene OpenSpec, el change correspondiente. |
 | `init.sh` | Valida la línea base del propio repo Matriz (bash + JSON) y la identidad de Git. |
 

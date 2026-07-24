@@ -167,8 +167,9 @@ fi
 # desde una plantilla propia de la Matriz, no la instalación de algo nuevo.
 "$MATRIX_ROOT/tools/scaffold-mcp.sh" "$REPO_NAME" --target "$WORK_DIR"
 
-# Auditar y mostrar el resultado (informativo, no bloquea el despliegue: el
-# humano decide si lanza al worker igualmente aunque haya CRITICAL en rojo).
+# Auditar y mostrar el resultado. Con CRITICAL en rojo NO se arranca el
+# worker automáticamente (ver el gate más abajo, antes del exec) — con el
+# arnés roto el worker no tendría ni init.sh/feature_list.json que leer.
 echo ""
 echo "🔍 Auditando arnés..."
 if "$MATRIX_ROOT/tools/audit-harness.sh" "$WORK_DIR"; then
@@ -231,7 +232,18 @@ fi
 ALLOWED_TOOLS='Edit,Write,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git checkout:*),Bash(git switch:*),Bash(git push origin:*),Bash(git pull:*),Bash(./mvnw:*),Bash(mvn:*),Bash(npm:*),Bash(npx:*),Bash(python3:*),Bash(pytest:*),Bash(gh issue:*),Bash(gh pr:*),Bash(./init.sh),Bash(./scripts/verify-feature.sh:*),Bash(openspec:*),Bash(graphify:*)'
 
 echo ""
-echo "Para arrancar el agente, entra en la carpeta:"
-echo "   cd $WORK_DIR"
-echo "Y ejecuta:"
-echo "   claude -p \"\$(cat $RENDERED)\" --allowedTools '$ALLOWED_TOOLS'"
+if [ "$AUDIT_OK" -ne 1 ]; then
+  echo "🔴 No se ofrece arranque automático porque el arnés tiene CRITICAL en rojo — revisa el detalle de arriba."
+  echo "Si quieres lanzarlo igualmente, entra en la carpeta y ejecuta:"
+  echo "   cd $WORK_DIR"
+  echo "Y ejecuta:"
+  echo "   claude -p \"\$(cat $RENDERED)\" --allowedTools '$ALLOWED_TOOLS'"
+  exit 0
+fi
+
+# Autónomo: sin confirmación y/N. El único gate es el arnés en verde de
+# arriba — si el arnés está bien, el worker arranca directo, sin pedir
+# permiso (igual que el resto de la sesión corre en auto mode).
+echo "🚀 Arrancando el worker en $WORK_DIR..."
+cd "$WORK_DIR"
+exec claude -p "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS"
