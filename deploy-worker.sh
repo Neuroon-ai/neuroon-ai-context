@@ -253,6 +253,18 @@ fi
 # la rama por defecto", etc.) son consultivas — esto las hace mecánicas en la
 # invocación. El deny de .claude/settings.json del repo (si existe) gana
 # siempre además. Cubre los stacks reales de la flota (Maven, npm, Python).
+# NOTA IMPORTANTE: --allowedTools por sí solo NO es "auto mode" — solo añade
+# excepciones al modo "default", que sigue preguntando (o denegando en
+# silencio, si no hay TTY) para cualquier cosa fuera de esta lista exacta. Por
+# eso el worker real de la Issue #290 se quedaba parado pidiendo aprobación
+# aunque "en teoría" ya tuviera permisos de sobra. Comprobado en real con un
+# repo de pruebas y una regla deny: --permission-mode bypassPermissions SÍ
+# ejecuta cualquier cosa sin preguntar y SIGUE respetando el deny de
+# .claude/settings.json (protección de rama, .env, etc. quedan intactas). Es
+# el que se usa más abajo en el exec final. --permission-mode dontAsk NO
+# sirve solo: falla cerrado (deniega) para todo lo que no esté ya en esta
+# ALLOWED_TOOLS, así que sin bypassPermissions el worker se seguiría
+# quedando parado igual.
 # NOTA: "Bash(git push origin:*)" (usado en una versión anterior) NO matchea
 # "git push -u origin <rama>" — el permiso de Claude Code hace match de
 # prefijo literal token a token, y el -u va ANTES de "origin". Comprobado en
@@ -292,7 +304,7 @@ fi
 echo "🚀 Arrancando el worker en $WORK_DIR..."
 cd "$WORK_DIR"
 if [ -t 1 ] && [ -t 0 ]; then
-  exec claude "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS"
+  exec claude "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
 else
-  exec claude -p "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS"
+  exec claude -p "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
 fi
