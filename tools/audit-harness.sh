@@ -186,16 +186,16 @@ if [ -f "$REPO/.gitignore" ]; then
   pass "S5" "Existe .gitignore"
   case "$TYPE" in
     gradle)
-      grep -q "^build/" "$REPO/.gitignore" 2>/dev/null && pass "S5" ".gitignore cubre build/" || warn "S5" ".gitignore no cubre build/ explícitamente"
+      if grep -q "^build/" "$REPO/.gitignore" 2>/dev/null; then pass "S5" ".gitignore cubre build/"; else warn "S5" ".gitignore no cubre build/ explícitamente"; fi
       ;;
     maven)
-      grep -q "^target/" "$REPO/.gitignore" 2>/dev/null && pass "S5" ".gitignore cubre target/" || warn "S5" ".gitignore no cubre target/ explícitamente"
+      if grep -q "^target/" "$REPO/.gitignore" 2>/dev/null; then pass "S5" ".gitignore cubre target/"; else warn "S5" ".gitignore no cubre target/ explícitamente"; fi
       ;;
     node|next)
-      grep -q "node_modules" "$REPO/.gitignore" 2>/dev/null && pass "S5" ".gitignore cubre node_modules" || warn "S5" ".gitignore no cubre node_modules explícitamente"
+      if grep -q "node_modules" "$REPO/.gitignore" 2>/dev/null; then pass "S5" ".gitignore cubre node_modules"; else warn "S5" ".gitignore no cubre node_modules explícitamente"; fi
       ;;
     python)
-      grep -qE "__pycache__|\.venv|venv/" "$REPO/.gitignore" 2>/dev/null && pass "S5" ".gitignore cubre entornos/artefactos Python" || warn "S5" ".gitignore no cubre __pycache__/venv explícitamente"
+      if grep -qE "__pycache__|\.venv|venv/" "$REPO/.gitignore" 2>/dev/null; then pass "S5" ".gitignore cubre entornos/artefactos Python"; else warn "S5" ".gitignore no cubre __pycache__/venv explícitamente"; fi
       ;;
   esac
 else

@@ -9,7 +9,7 @@
       "default_branch": "develop",
       "agent_enabled": true,
       "harness_ready": false,
-      "harness_notes": "Auditado el 2026-07-24 con tools/audit-harness.sh: 0 CRITICAL, 5 WARN (falta session-handoff.md, scripts/verify-feature.sh, clean-state-checklist.md; .gitignore no cubre target/). El arnés más completo de la flota. Pasar a true cuando se sostenga en verde varias rondas.",
+      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 2 WARN (solo falta .gitignore cubriendo target/ y graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
       "graph_ready": false,
       "graph_notes": "Auditado el 2026-07-24: graphify operativo en la máquina pero graphify-out/graph.json no existe todavía — correr tools/sync-graph.sh.",
       "mcp_servers": [
@@ -23,7 +23,7 @@
       "default_branch": "main",
       "agent_enabled": false,
       "harness_ready": false,
-      "harness_notes": "Auditado el 2026-07-24: 3 CRITICAL (falta feature_list.json, claude-progress.md, init.sh), 4 WARN. Candidato a tools/scaffold-harness.sh.",
+      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 1 WARN (solo falta graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
       "graph_ready": false,
       "graph_notes": "Auditado el 2026-07-24: graphify-out/graph.json no existe — correr tools/sync-graph.sh.",
       "mcp_servers": []
@@ -35,7 +35,7 @@
       "default_branch": "main",
       "agent_enabled": false,
       "harness_ready": false,
-      "harness_notes": "Auditado el 2026-07-24: 3 CRITICAL (falta feature_list.json, claude-progress.md, init.sh), 5 WARN. Sin convención de verify-feature.sh para PHP/WordPress — definir a mano si se activa el agente.",
+      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 3 WARN (falta scripts/verify-feature.sh — sin convención estándar para PHP/WordPress, definir a mano; falta graphify-out/graph.json).",
       "graph_ready": false,
       "graph_notes": "Auditado el 2026-07-24: graphify-out/graph.json no existe — correr tools/sync-graph.sh.",
       "mcp_servers": []
@@ -47,7 +47,7 @@
       "default_branch": "main",
       "agent_enabled": false,
       "harness_ready": false,
-      "harness_notes": "Auditado el 2026-07-24: 3 CRITICAL (falta feature_list.json, claude-progress.md, init.sh), 4 WARN. Candidato a tools/scaffold-harness.sh.",
+      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 1 WARN (solo falta graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
       "graph_ready": false,
       "graph_notes": "Auditado el 2026-07-24: graphify-out/graph.json no existe — correr tools/sync-graph.sh.",
       "mcp_servers": []
@@ -71,7 +71,7 @@
       "default_branch": "main",
       "agent_enabled": false,
       "harness_ready": false,
-      "harness_notes": "Auditado el 2026-07-24: 3 CRITICAL (falta feature_list.json, claude-progress.md, init.sh), 4 WARN. Candidato a tools/scaffold-harness.sh.",
+      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 1 WARN (solo falta graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
       "graph_ready": false,
       "graph_notes": "Auditado el 2026-07-24: graphify-out/graph.json no existe — correr tools/sync-graph.sh.",
       "mcp_servers": []
@@ -83,7 +83,7 @@
       "default_branch": "main",
       "agent_enabled": false,
       "harness_ready": false,
-      "harness_notes": "Auditado el 2026-07-24: 3 CRITICAL (falta feature_list.json, claude-progress.md, init.sh), 4 WARN. Ya tiene requirements.txt y tests/ — buen candidato a tools/scaffold-harness.sh.",
+      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 1 WARN (solo falta graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
       "graph_ready": false,
       "graph_notes": "Auditado el 2026-07-24: graphify-out/graph.json no existe — correr tools/sync-graph.sh.",
       "mcp_servers": []
