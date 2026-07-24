@@ -229,7 +229,15 @@ fi
 # la rama por defecto", etc.) son consultivas — esto las hace mecánicas en la
 # invocación. El deny de .claude/settings.json del repo (si existe) gana
 # siempre además. Cubre los stacks reales de la flota (Maven, npm, Python).
-ALLOWED_TOOLS='Edit,Write,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git checkout:*),Bash(git switch:*),Bash(git push origin:*),Bash(git pull:*),Bash(./mvnw:*),Bash(mvn:*),Bash(npm:*),Bash(npx:*),Bash(python3:*),Bash(pytest:*),Bash(gh issue:*),Bash(gh pr:*),Bash(./init.sh),Bash(./scripts/verify-feature.sh:*),Bash(openspec:*),Bash(graphify:*)'
+# NOTA: "Bash(git push origin:*)" (usado en una versión anterior) NO matchea
+# "git push -u origin <rama>" — el permiso de Claude Code hace match de
+# prefijo literal token a token, y el -u va ANTES de "origin". Comprobado en
+# real: bloqueó el primer intento de la Issue #290 pidiendo aprobación manual
+# para un push de rama de trabajo que ya estaba permitido "en teoría". Con
+# "git push:*" cubrimos -u/--set-upstream/etc.; el deny de push directo a la
+# rama por defecto en .claude/settings.json (tools/scaffold-harness.sh) sigue
+# aplicando y gana siempre sobre este allow.
+ALLOWED_TOOLS='Edit,Write,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git checkout:*),Bash(git switch:*),Bash(git push:*),Bash(git pull:*),Bash(./mvnw:*),Bash(mvn:*),Bash(npm:*),Bash(npx:*),Bash(python3:*),Bash(pytest:*),Bash(gh issue:*),Bash(gh pr:*),Bash(./init.sh),Bash(./scripts/verify-feature.sh:*),Bash(openspec:*),Bash(graphify:*)'
 
 echo ""
 if [ "$AUDIT_OK" -ne 1 ]; then
@@ -244,6 +252,19 @@ fi
 # Autónomo: sin confirmación y/N. El único gate es el arnés en verde de
 # arriba — si el arnés está bien, el worker arranca directo, sin pedir
 # permiso (igual que el resto de la sesión corre en auto mode).
+#
+# Con terminal real (-t 1): modo INTERACTIVO (sin -p), igual que
+# plan-feature.sh. `-p` es headless y no imprime NADA hasta terminar o hasta
+# que necesite preguntar algo — en una terminal humana eso se ve exactamente
+# igual que "colgado" aunque esté trabajando de verdad. El modo interactivo
+# muestra en vivo lo que hace, y si necesita preguntar algo (p. ej. una
+# decisión ambigua) lo haces ahí mismo, sin --resume por separado.
+# Sin terminal (cron, otro script, este mismo deploy-worker.sh invocado por
+# un proceso no interactivo): cae a -p, que sí es el modo correcto ahí.
 echo "🚀 Arrancando el worker en $WORK_DIR..."
 cd "$WORK_DIR"
-exec claude -p "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS"
+if [ -t 1 ] && [ -t 0 ]; then
+  exec claude "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS"
+else
+  exec claude -p "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS"
+fi

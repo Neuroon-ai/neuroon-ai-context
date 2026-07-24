@@ -475,11 +475,17 @@ elif command -v jq >/dev/null 2>&1; then
   # pelo: jq escapa correctamente el valor (comillas, backslashes) y evita
   # que un default_branch atípico deje el JSON mal formado sin que nadie se
   # entere (las reglas deny se ignorarían en silencio).
+  # Varias variantes por cada patrón: el matching de permisos de Claude Code
+  # es de prefijo LITERAL token a token, así que "Bash(git push origin
+  # main:*)" NO cubre "git push -u origin main" (el -u va antes de origin).
+  # Comprobado en real contra api-search-neuroon — no es teórico.
   jq -n --arg branch "$DEFAULT_BRANCH" '{
     permissions: {
       deny: [
         ("Bash(git push origin " + $branch + ")"),
         ("Bash(git push origin " + $branch + ":*)"),
+        ("Bash(git push -u origin " + $branch + ":*)"),
+        ("Bash(git push --set-upstream origin " + $branch + ":*)"),
         "Bash(git push --force:*)",
         "Bash(git push -f:*)",
         "Read(./.env)",
@@ -499,6 +505,8 @@ else
     "deny": [
       "Bash(git push origin $DEFAULT_BRANCH)",
       "Bash(git push origin $DEFAULT_BRANCH:*)",
+      "Bash(git push -u origin $DEFAULT_BRANCH:*)",
+      "Bash(git push --set-upstream origin $DEFAULT_BRANCH:*)",
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",
       "Read(./.env)",
