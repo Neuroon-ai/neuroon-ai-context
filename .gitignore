@@ -1,0 +1,12 @@
+# Repos clonados por la flota — NO se versionan en la Matriz
+/workspaces/
+
+# Secretos y entorno local
+.env
+.env.*
+*.local
+
+# Artefactos temporales
+gh.tar.gz
+*.log
+.DS_Store

@@ -2,16 +2,35 @@
 # Arranca una sesión de PLANIFICACIÓN (Arquitecto/Product Owner) para un repositorio.
 # A diferencia de deploy-worker.sh (que EJECUTA código), este script solo ABRE una
 # conversación interactiva de solo-lectura para trocear una feature en Issues de GitHub.
-set -e
+set -euo pipefail
 
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
     echo "❌ Error: Debes indicar el nombre del repositorio a planificar."
     echo "Uso: ./plan-feature.sh api-search-neuroon"
     exit 1
 fi
 
 REPO_NAME=$1
-WORK_DIR="./workspaces/$REPO_NAME"
+MATRIX_ROOT="$(cd "$(dirname "$0")" && pwd)"
+MANIFEST="$MATRIX_ROOT/repositories.json"
+
+# base_path viene de repositories.json (misma fuente que sync-fleet.sh y
+# deploy-worker.sh) para que los tres scripts SIEMPRE coincidan en dónde
+# vive la flota, aunque cambie.
+RAW_BASE_PATH="./workspaces"
+if command -v jq &> /dev/null && [ -f "$MANIFEST" ]; then
+    RAW_BASE_PATH=$(jq -r '.base_path' "$MANIFEST")
+fi
+if command -v envsubst &> /dev/null; then
+    BASE_PATH_EXPANDED=$(echo "$RAW_BASE_PATH" | envsubst)
+else
+    BASE_PATH_EXPANDED="$RAW_BASE_PATH"
+fi
+case "$BASE_PATH_EXPANDED" in
+    /*) WORKSPACES_DIR="$BASE_PATH_EXPANDED" ;;
+    *) WORKSPACES_DIR="$MATRIX_ROOT/${BASE_PATH_EXPANDED#./}" ;;
+esac
+WORK_DIR="$WORKSPACES_DIR/$REPO_NAME"
 
 if [ ! -d "$WORK_DIR" ]; then
     echo "❌ El repositorio $REPO_NAME no está sincronizado todavía."
