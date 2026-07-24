@@ -23,8 +23,13 @@ claude login
 # 3. Sincroniza toda la flota declarada en repositories.json
 ./sync-fleet.sh
 
-# 4. Arranca un worker sobre un repositorio concreto
+# 4. Planifica una feature (crea la Issue + el change de OpenSpec)
+./plan-feature.sh api-search-neuroon
+
+# 5. Arranca un worker sobre un repositorio concreto
 ./deploy-worker.sh api-search-neuroon
+# ...o atado a una Issue concreta ya planificada:
+./deploy-worker.sh api-search-neuroon --issue 292
 ```
 
 ## Scripts
@@ -33,9 +38,26 @@ claude login
 |--------|-----|
 | `install-factory.sh` | Aprovisiona la máquina Matriz (dependencias globales, una sola vez). |
 | `sync-fleet.sh` | Clona/actualiza todos los repos declarados en `repositories.json`. |
-| `deploy-worker.sh <repo>` | Despliega un repo (arnés, grafo, MCP) y muestra el comando para arrancar el worker sobre él. |
-| `plan-feature.sh <repo>` | Abre una sesión de planificación (Arquitecto/PO) de solo lectura. |
+| `deploy-worker.sh <repo> [--yes] [--issue <N>]` | Despliega un repo (arnés, grafo, MCP) y muestra el comando para arrancar el worker sobre él. Con `--issue <N>`, el worker queda asignado explícitamente a esa Issue en vez de elegir una él solo. |
+| `plan-feature.sh <repo>` | Abre una sesión de planificación (Arquitecto/PO) de solo lectura: crea la Issue en GitHub y, si el repo tiene OpenSpec, el change correspondiente. |
 | `init.sh` | Valida la línea base del propio repo Matriz (bash + JSON) y la identidad de Git. |
+
+## Herramientas (`tools/`)
+
+Scripts de soporte que `deploy-worker.sh` invoca automáticamente, pero también se pueden correr sueltos:
+
+| Script | Rol |
+|--------|-----|
+| `tools/audit-harness.sh [ruta]` | Audita el cumplimiento del arnés de un repo (PASS/WARN/FAIL por sección); detecta el stack (Gradle, Maven, Node/Next, Python, WordPress/PHP). |
+| `tools/scaffold-harness.sh --target <dir> [--force] [--default-branch <rama>]` | Genera el esqueleto de arnés que falte en un repo (idempotente, nunca sobreescribe sin `--force`). |
+| `tools/scaffold-mcp.sh <repo> --target <dir>` | Sincroniza `.mcp.json` del repo target contra `mcp_servers` declarados en `repositories.json`. |
+| `tools/sync-graph.sh [ruta]` | Bootstrap del grafo de código (graphify): primer `extract` + hooks de auto-actualización. |
+
+## Templates y documentación
+
+- `templates/{maker,verifier,worker}-prompt.md` — prompts versionados del patrón Planner→Maker→Verifier, renderizados por `deploy-worker.sh`/`plan-feature.sh`.
+- `templates/mcp/*.json` — plantillas de servidores MCP que `scaffold-mcp.sh` inyecta en `.mcp.json`.
+- `docs/LOOP-ENGINEERING.md` — diseño del patrón Maker/Verifier y la escalera de madurez L1-L5 para automatización (documento de diseño; nada de esto se activa solo).
 
 ## Verdad absoluta
 

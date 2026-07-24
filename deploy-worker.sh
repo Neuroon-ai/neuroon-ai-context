@@ -1,22 +1,30 @@
 #!/bin/bash
 # Despliega un repositorio y prepara al agente Worker para operar sobre él.
-# Uso: ./deploy-worker.sh <nombre-repo> [--yes]
-#   --yes  acepta automáticamente los pasos y/N (para ejecución no interactiva).
+# Uso: ./deploy-worker.sh <nombre-repo> [--yes] [--issue <N>]
+#   --yes        acepta automáticamente los pasos y/N (para ejecución no interactiva).
+#   --issue <N>  asigna explícitamente la Issue #N al worker (si no, el worker
+#                elige él solo una Issue abierta cualquiera al arrancar).
 set -euo pipefail
 
 REPO_NAME=""
 ASSUME_YES=0
-for arg in "$@"; do
-  case "$arg" in
-    --yes) ASSUME_YES=1 ;;
-    -*) echo "❌ Flag desconocido: $arg"; exit 1 ;;
-    *) REPO_NAME="$arg" ;;
+ISSUE_NUMBER=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --yes) ASSUME_YES=1; shift ;;
+    --issue) ISSUE_NUMBER="${2:-}"; shift 2 ;;
+    -*) echo "❌ Flag desconocido: $1"; exit 1 ;;
+    *) REPO_NAME="$1"; shift ;;
   esac
 done
 
 if [ -z "$REPO_NAME" ]; then
   echo "❌ Error: Debes indicar el nombre del repositorio a desplegar."
-  echo "Uso: ./deploy-worker.sh api-search-neuroon [--yes]"
+  echo "Uso: ./deploy-worker.sh api-search-neuroon [--yes] [--issue <N>]"
+  exit 1
+fi
+if [ -n "$ISSUE_NUMBER" ] && ! [[ "$ISSUE_NUMBER" =~ ^[0-9]+$ ]]; then
+  echo "❌ --issue debe ser un número (ej. --issue 42), recibido: '$ISSUE_NUMBER'"
   exit 1
 fi
 
@@ -54,6 +62,23 @@ if [ "$(echo "$PROJECT_JSON" | jq -r '.agent_enabled')" != "true" ]; then
 fi
 ORG=$(jq -r '.org' "$MANIFEST")
 DEFAULT_BRANCH=$(echo "$PROJECT_JSON" | jq -r '.default_branch // "main"')
+
+# --issue valida contra GitHub ANTES de tocar nada más: si el número está mal
+# o la Issue no está abierta, mejor fallar aquí que dejar al worker
+# arrancando una sesión sobre una Issue inexistente/ya cerrada.
+if [ -n "$ISSUE_NUMBER" ]; then
+  command -v gh >/dev/null 2>&1 || { echo "❌ gh no está instalado (correr ./install-factory.sh)."; exit 1; }
+  ISSUE_STATE=$(gh issue view "$ISSUE_NUMBER" --repo "$ORG/$REPO_NAME" --json state -q .state 2>/dev/null || true)
+  if [ -z "$ISSUE_STATE" ]; then
+    echo "❌ No se encontró la Issue #$ISSUE_NUMBER en $ORG/$REPO_NAME."
+    exit 1
+  fi
+  if [ "$ISSUE_STATE" != "OPEN" ]; then
+    echo "❌ La Issue #$ISSUE_NUMBER en $ORG/$REPO_NAME no está abierta (estado: $ISSUE_STATE)."
+    exit 1
+  fi
+  echo "🎯 Worker asignado explícitamente a la Issue #$ISSUE_NUMBER."
+fi
 
 # Pregunta y/N respetando --yes y la ausencia de TTY: sin terminal humana y
 # sin --yes, la respuesta es N con aviso (nunca colgarse ni morir por EOF).
@@ -164,6 +189,21 @@ sed \
   -e "s/{{REPO_NAME}}/$REPO_NAME/g" \
   -e "s/{{DATE}}/$(date +%F)/g" \
   "$MATRIX_ROOT/templates/worker-prompt.md" > "$RENDERED"
+
+# --issue: se añade como una sección aparte al final del prompt renderizado,
+# en vez de tocar la plantilla versionada — así el paso 7 del worker-prompt
+# ("elige UNA Issue") queda sobreescrito solo cuando de verdad se pidió una
+# Issue concreta, y el caso sin --issue no cambia en nada.
+if [ -n "$ISSUE_NUMBER" ]; then
+  cat >> "$RENDERED" <<EOF
+
+## Issue asignada para este despliegue
+
+Esta sesión tiene asignada EXPLÍCITAMENTE la Issue #$ISSUE_NUMBER
+(\`gh issue view $ISSUE_NUMBER\`). En el paso 7 de arriba, NO elijas otra
+Issue de la lista de abiertas: trabaja EXCLUSIVAMENTE en la #$ISSUE_NUMBER.
+EOF
+fi
 
 echo ""
 echo "✅ Worker desplegado en $WORK_DIR"
