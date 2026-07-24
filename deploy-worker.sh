@@ -78,6 +78,30 @@ if [ -n "$ISSUE_NUMBER" ]; then
     exit 1
   fi
   echo "🎯 Worker asignado explícitamente a la Issue #$ISSUE_NUMBER."
+
+  # Mover la Issue a "In progress" en el Project Board justo al arrancar el
+  # worker — no cuando abra el PR (eso ya lo cubriría un GitHub Action, que
+  # no tenemos montado). Best-effort: si el proyecto/campo no existen o gh no
+  # tiene permisos, solo avisa, nunca aborta el despliegue por esto.
+  # IDs reales de "Neuroon AI Dashboard" (Project #1 de la org Neuroon-ai),
+  # verificados con `gh project field-list 1 --owner Neuroon-ai`.
+  PROJECT_NUMBER=1
+  PROJECT_OWNER="Neuroon-ai"
+  PROJECT_ID="PVT_kwDODjIeO84BeHNs"
+  STATUS_FIELD_ID="PVTSSF_lADODjIeO84BeHNszhYj1XY"
+  IN_PROGRESS_OPTION_ID="47fc9ee4"
+  ITEM_ID=$(gh project item-list "$PROJECT_NUMBER" --owner "$PROJECT_OWNER" --format json --limit 300 2>/dev/null \
+    | jq -r --argjson n "$ISSUE_NUMBER" --arg repo "$REPO_NAME" \
+      '.items[] | select(.content.number == $n and (.content.repository | endswith($repo))) | .id' 2>/dev/null || true)
+  if [ -n "$ITEM_ID" ]; then
+    if gh project item-edit --id "$ITEM_ID" --project-id "$PROJECT_ID" --field-id "$STATUS_FIELD_ID" --single-select-option-id "$IN_PROGRESS_OPTION_ID" >/dev/null 2>&1; then
+      echo "   📋 Issue #$ISSUE_NUMBER movida a 'In progress' en el Project Board."
+    else
+      echo "   ⚠️  No se pudo mover la Issue #$ISSUE_NUMBER en el Project Board (revisa permisos de gh)."
+    fi
+  else
+    echo "   ⚠️  La Issue #$ISSUE_NUMBER no está en el Project Board '$PROJECT_OWNER'/#$PROJECT_NUMBER — no se mueve nada."
+  fi
 fi
 
 # Pregunta y/N respetando --yes y la ausencia de TTY: sin terminal humana y
