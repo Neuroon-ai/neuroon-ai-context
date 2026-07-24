@@ -303,8 +303,23 @@ fi
 # un proceso no interactivo): cae a -p, que sí es el modo correcto ahí.
 echo "🚀 Arrancando el worker en $WORK_DIR..."
 cd "$WORK_DIR"
-if [ -t 1 ] && [ -t 0 ]; then
-  exec claude "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
+
+# Scope de systemd con CPUWeight=50 (la mitad del peso por defecto) y
+# MemoryHigh=10G: cuando el worker + su mvnw verify compiten con la sesión
+# interactiva del humano, el cgroup cede CPU a la sesión y amortigua los picos
+# de RAM del build. Un `nice` a secas NO sirve aquí: cada sesión corre en un
+# scope hermano de cgroup v2 y el kernel arbitra por scope, no por niceness.
+# Si el user manager de systemd no está disponible (contenedor raro, ssh sin
+# lingering), se lanza sin envolver antes que no lanzar.
+RUN_WRAP=()
+if systemd-run --user --scope -q -p CPUWeight=50 true 2>/dev/null; then
+  RUN_WRAP=(systemd-run --user --scope -q -p CPUWeight=50 -p MemoryHigh=10G)
 else
-  exec claude -p "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
+  echo "⚠️  systemd-run --user no disponible — el worker arranca sin límites de CPU/RAM propios."
+fi
+
+if [ -t 1 ] && [ -t 0 ]; then
+  exec "${RUN_WRAP[@]}" claude "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
+else
+  exec "${RUN_WRAP[@]}" claude -p "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
 fi
