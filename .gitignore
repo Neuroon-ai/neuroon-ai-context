@@ -5,6 +5,7 @@
 .env
 .env.*
 *.local
+CLAUDE.local.md
 
 # Artefactos temporales
 gh.tar.gz

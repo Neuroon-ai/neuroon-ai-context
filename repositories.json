@@ -11,9 +11,9 @@
       "harness_ready": false,
       "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 2 WARN (solo falta .gitignore cubriendo target/ y graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
       "graph_ready": false,
-      "graph_notes": "Bootstrapeado el 2026-07-24 con tools/sync-graph.sh: graph.json (23911 nodos, 69635 edges, 675 comunidades) + hooks post-commit/post-checkout + merge driver, todo en verde en S6. 122 archivos .sql no se procesaron (falta tree_sitter_sql — pip install \"graphifyy[sql]\"). Pasar a true cuando se sostenga varias rondas.",
+      "graph_notes": "2026-08-07: reconstruido en la caché centralizada workspaces/.graphify-data/api-search-neuroon/ (ver tools/sync-graph.sh): graph.json (24022 nodos, 73492 edges, 682 comunidades), sello .built-at-commit == HEAD (fb169ee). S6 de audit-harness.sh en verde (4/4). 127 archivos .sql no se procesaron (falta tree_sitter_sql — pip install \"graphifyy[sql]\"); 9 ficheros de fixtures/config sin nodos (normal). Pasar graph_ready a true cuando se sostenga en verde varias rondas — esta es la primera.",
       "mcp_servers": [
-        "graphify"
+        "graphify-api"
       ]
     },
     {

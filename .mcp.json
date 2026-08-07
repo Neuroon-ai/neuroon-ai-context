@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "graphify-api": {
+      "command": "graphify-mcp",
+      "args": ["workspaces/.graphify-data/api-search-neuroon/graphify-out/graph.json"]
+    }
+  }
+}

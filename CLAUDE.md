@@ -16,6 +16,19 @@ Los proyectos que conforman la plataforma Neuroon están declarados como la "Ver
 - Si se añade un nuevo microservicio o frontend a la empresa, DEBE registrarse en `repositories.json`.
 - El script `./sync-fleet.sh` lee ese JSON y clona o actualiza todos los repositorios automáticamente en la máquina, dentro de `./workspaces`.
 
+## Modelo operativo: una sesión, toda la flota
+
+Se trabaja con **una sola sesión Claude en esta raíz**, viendo todos los repos de `workspaces/` a la vez — no un worker por repo (`deploy-worker.sh` quedó en desuso el 2026-08-07, ver `README.md`). El grafo de código (graphify) vive por eso centralizado fuera de cada repo, en `workspaces/.graphify-data/<repo>/` (`tools/sync-graph.sh`), y `.mcp.json` en esta raíz declara un servidor por repo con sufijo (`graphify-api`, y así sucesivamente conforme se añadan más).
+
+### Puertas mecánicas, no prosa
+
+Un `CLAUDE.md` es contexto, no configuración: sobrevive mal a una compactación o a un subagente. Lo que debe cumplirse siempre está en `.claude/settings.json`, no aquí:
+
+- `tools/session-brief.sh` (`SessionStart`, también al compactar) — mide el estado real de la flota y lo reinyecta.
+- `tools/guard-graph-fresh.sh` (`PreToolUse` sobre `mcp__graphify-*`) — hecho binario y comprobable (grafo construido sobre un commit que ya no es HEAD) → **deniega**.
+- `tools/guard-symbol-search.sh` (`PreToolUse` sobre `Bash`) — criterio de enrutado (¿esto se buscaba mejor con serena?), no una obligación objetiva → **avisa y cuenta**, nunca bloquea.
+- `tools/audit-harness.sh` (check S7) — agrega ese conteo a lo largo de las sesiones, para que "¿se usa el MCP de verdad?" sea un número medido, no una impresión.
+
 ## Memoria Persistente entre Sesiones (Claude-Mem)
 
 Esta máquina Matriz instala `claude-mem` a nivel global (transversal a todos los Workers de todos los repositorios).

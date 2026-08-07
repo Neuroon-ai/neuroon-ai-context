@@ -16,6 +16,14 @@ if [ ! -d "$REPO" ]; then
 fi
 REPO="$(cd "$REPO" && pwd)"
 
+# MATRIX_ROOT/REPO_NAME: desde que se trabaja con una sesión Claude única en
+# la raíz de la Matriz (no un worker por repo), el grafo de código vive
+# centralizado fuera del repo (workspaces/.graphify-data/, ver
+# tools/sync-graph.sh) — S6 necesita saber dónde está la Matriz para
+# encontrarlo, sea cual sea la ruta que se le pase a este script.
+MATRIX_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_NAME="$(basename "$REPO")"
+
 CRITICAL_FAIL=0
 RECOMMENDED_WARN=0
 TOTAL=0
@@ -218,21 +226,142 @@ else
 fi
 
 # ── S6. Grafo de código (graphify) ────────────────────────────────────────
+# graphify-out/ no vive junto al repo: vive centralizado en la Matriz
+# (workspaces/.graphify-data/, ver tools/sync-graph.sh) para no ensuciar cada
+# PR con diffs de +100k líneas y porque la sesión que lo consulta vive en la
+# raíz de la Matriz, no dentro de cada clon. Nadie lo reconstruye solo: no hay
+# hook post-commit por repo (un clon aislado no comparte ese estado con la
+# Matriz) — la única vía es correr ./sync-fleet.sh o tools/sync-graph.sh
+# <clon> a mano. Por eso no basta con que graph.json exista: hay que medir de
+# qué commit salió, comparando el sello .built-at-commit contra el HEAD real.
+#
+# Umbral: >5 commits CON cambios de código es CRITICAL — mismo número que usa
+# S3 para el drift de claude-progress.md, una sola noción de "drift grave" en
+# todo el arnés. Un desfase sin ficheros de código tocados (commits de
+# documentación, de arnés...) no es un fallo: el grafo sigue describiendo el
+# código real.
 section "S6. Grafo de código"
+GRAPH_DIR_S6="$MATRIX_ROOT/workspaces/.graphify-data/$REPO_NAME/graphify-out"
+GRAPH_JSON_S6="$GRAPH_DIR_S6/graph.json"
+GRAPH_MARCA_S6="$GRAPH_DIR_S6/.built-at-commit"
 if command -v graphify >/dev/null 2>&1 && graphify --version >/dev/null 2>&1; then
   pass "S6" "graphify instalado y operativo"
-  if [ -f "$REPO/graphify-out/graph.json" ]; then
-    pass "S6" "graph.json presente (graphify-out/)"
-    if (cd "$REPO" && graphify hook status 2>/dev/null | grep -q "not installed"); then
-      warn "S6" "Hooks de auto-actualización del grafo no instalados (correr tools/sync-graph.sh)"
+  if [ -f "$GRAPH_JSON_S6" ]; then
+    pass "S6" "graph.json presente (caché centralizada: workspaces/.graphify-data/$REPO_NAME/)"
+    if [ ! -f "$GRAPH_MARCA_S6" ]; then
+      warn "S6" "El grafo no lleva sello .built-at-commit — no se puede saber de qué commit salió (incógnita); correr tools/sync-graph.sh workspaces/$REPO_NAME"
+    elif ! git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      warn "S6" "$REPO no es un repositorio git — no se puede medir la frescura del grafo (incógnita)"
     else
-      pass "S6" "Hooks de auto-actualización instalados (post-commit/post-checkout + merge driver)"
+      SELLO_S6="$(tr -d '[:space:]' < "$GRAPH_MARCA_S6")"
+      HEAD_S6="$(git -C "$REPO" rev-parse HEAD 2>/dev/null || echo "")"
+      if [ -z "$SELLO_S6" ] || [ -z "$HEAD_S6" ]; then
+        warn "S6" "Sello o HEAD ilegibles — frescura del grafo desconocida (incógnita)"
+      elif ! git -C "$REPO" cat-file -e "${SELLO_S6}^{commit}" 2>/dev/null; then
+        warn "S6" "El sello del grafo (${SELLO_S6}) no existe en este clon (¿shallow o rama distinta?) — frescura desconocida"
+      else
+        DETRAS_S6="$(git -C "$REPO" rev-list --count "${SELLO_S6}..HEAD" 2>/dev/null || echo "?")"
+        if [ "$DETRAS_S6" = "?" ]; then
+          warn "S6" "No se pudo contar el desfase del grafo (incógnita)"
+        elif [ "$DETRAS_S6" = "0" ]; then
+          pass "S6" "Grafo al día: sello == HEAD ($(echo "$SELLO_S6" | cut -c1-7))"
+        else
+          # Extensiones que graphify indexa en esta flota: Java (Spring Boot),
+          # Python (api-search-engine), PHP (wordpress-plugin) y TS/JS (los
+          # tres frontends: Next.js, Vite, Docusaurus).
+          COD_S6="$(git -C "$REPO" diff --name-only "$SELLO_S6" HEAD -- \
+            '*.java' '*.py' '*.php' '*.ts' '*.tsx' '*.js' '*.jsx' 2>/dev/null | wc -l | tr -d ' ')"
+          if [ "${COD_S6:-0}" -eq 0 ]; then
+            pass "S6" "Grafo $DETRAS_S6 commit(s) por detrás del HEAD pero con 0 ficheros de código tocados — sigue describiendo el código real"
+          elif [ "$DETRAS_S6" -gt 5 ]; then
+            fail_critical "S6" "Grafo desfasado: $DETRAS_S6 commits y $COD_S6 fichero(s) de código cambiados desde el sello ($(echo "$SELLO_S6" | cut -c1-7)) — el grafo miente; correr tools/sync-graph.sh workspaces/$REPO_NAME"
+          else
+            warn "S6" "Grafo desfasado: $DETRAS_S6 commit(s) y $COD_S6 fichero(s) de código cambiados desde el sello — refrescar con tools/sync-graph.sh workspaces/$REPO_NAME"
+          fi
+        fi
+      fi
     fi
   else
-    warn "S6" "Falta graphify-out/graph.json — correr tools/sync-graph.sh"
+    warn "S6" "Falta $GRAPH_JSON_S6 — sin grafo no hay orientación estructural; correr tools/sync-graph.sh workspaces/$REPO_NAME"
+  fi
+  if [ "$HAVE_JQ" -eq 1 ] && [ -f "$MATRIX_ROOT/repositories.json" ]; then
+    if jq -e --arg n "$REPO_NAME" \
+        '.projects[] | select(.name == $n) | .mcp_servers // [] | map(select(startswith("graphify"))) | length > 0' \
+        "$MATRIX_ROOT/repositories.json" >/dev/null 2>&1; then
+      pass "S6" "graphify declarado en mcp_servers de $REPO_NAME (repositories.json)"
+    else
+      warn "S6" "graphify no está en mcp_servers de $REPO_NAME en repositories.json — la sesión no sabrá que este repo tiene grafo"
+    fi
+  else
+    warn "S6" "No se pudo comprobar mcp_servers en repositories.json (falta jq o el fichero)"
   fi
 else
   warn "S6" "graphify no está instalado/operativo en esta máquina"
+fi
+
+# ── S7. Uso real de herramientas ──────────────────────────────────────────
+# CLAUDE.md manda "orienta con el grafo/serena, no con grep", pero CLAUDE.md
+# es contexto, no configuración: se cumple casi siempre y falla justo tras
+# compactación y en subagentes. Aquí se mide, no se aconseja.
+#
+# La fuente es el JSONL append-only que escribe el hook PostToolUse que
+# instala install-factory.sh (configure_tool_audit_hook): un objeto por
+# tool-call con ts/session_id/cwd/tool_name.
+#
+# Severidad WARN a propósito: hay tareas donde grep es legítimamente mejor
+# (buscar una cadena literal, contar ocurrencias). Lo que este check señala
+# es el patrón caro — sesión larga de Bash sobre un repo con grafo y ni una
+# sola consulta estructural — no un pecado por llamada.
+section "S7. Uso real de herramientas"
+AUDIT_LOG_S7="$HOME/.claude/audit/tool-calls.jsonl"
+VENTANA_DIAS_S7=14
+UMBRAL_BASH_S7=20
+MAX_LINEAS_S7=200000
+if [ "$HAVE_JQ" -ne 1 ]; then
+  warn "S7" "jq no instalado — no se puede medir el uso de herramientas (incógnita, no verde)"
+elif [ ! -f "$AUDIT_LOG_S7" ]; then
+  warn "S7" "No existe $AUDIT_LOG_S7 (¿máquina nueva? correr ./install-factory.sh) — uso de herramientas: incógnita, no verde"
+else
+  # date -v (BSD/macOS) y date -d (GNU) no se solapan; se prueban los dos.
+  SINCE_S7="$(date -u -v-${VENTANA_DIAS_S7}d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
+    || date -u -d "${VENTANA_DIAS_S7} days ago" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")"
+  if [ -z "$SINCE_S7" ]; then
+    warn "S7" "No se pudo calcular la ventana de $VENTANA_DIAS_S7 días con este date(1) — incógnita"
+  else
+    # El primer jq filtra línea a línea y se traga una última línea a medio
+    # escribir (el hook escribe en paralelo); sin él, un solo registro roto
+    # tumbaría el slurp entero y el check mentiría por vacío.
+    RESUMEN_S7="$(tail -n "$MAX_LINEAS_S7" "$AUDIT_LOG_S7" 2>/dev/null \
+      | jq -c . 2>/dev/null \
+      | jq -s -r --arg p "$REPO" --arg rn "$REPO_NAME" --arg since "$SINCE_S7" --argjson umbral "$UMBRAL_BASH_S7" '
+          map(select((.ts // "") >= $since))
+          | (map(select((.cwd == $p)
+                        or ((.cwd // "") | startswith($p + "/"))
+                        or ((.tool_input_summary // "") | contains("workspaces/" + $rn))))
+             | map(.session_id) | unique) as $sids
+          | map(select(.session_id as $s | $sids | index($s)))
+          | group_by(.session_id)
+          | map({bash: (map(select(.tool_name == "Bash")) | length),
+                 est:  (map(select((.tool_name // "") | test("^mcp__(graphify|serena)"))) | length)})
+          | (map(select(.bash >= $umbral))) as $densas
+          | ($densas | map(select(.est == 0))) as $ciegas
+          | "\(length) \($densas | length) \($ciegas | length) \(($ciegas | map(.bash) | add) // 0)"
+        ' 2>/dev/null || true)"
+    if [ -z "$RESUMEN_S7" ]; then
+      warn "S7" "No se pudo agregar $AUDIT_LOG_S7 (¿log corrupto?) — uso de herramientas: incógnita, no verde"
+    else
+      read -r SES_S7 DENSAS_S7 CIEGAS_S7 BASH_CIEGO_S7 <<< "$RESUMEN_S7"
+      if [ "${SES_S7:-0}" -eq 0 ]; then
+        warn "S7" "Ninguna sesión atribuible a $REPO_NAME en los últimos $VENTANA_DIAS_S7 días — sin datos que medir (incógnita, no verde)"
+      elif [ "${DENSAS_S7:-0}" -eq 0 ]; then
+        warn "S7" "$SES_S7 sesión(es) sobre $REPO_NAME pero ninguna con ≥$UMBRAL_BASH_S7 Bash — muestra insuficiente (incógnita, no verde)"
+      elif [ "${CIEGAS_S7:-0}" -eq 0 ]; then
+        pass "S7" "$DENSAS_S7/$SES_S7 sesión(es) densas en los últimos $VENTANA_DIAS_S7 días y todas usaron grafo/serena"
+      else
+        warn "S7" "$CIEGAS_S7/$DENSAS_S7 sesión(es) densas sobre $REPO_NAME gastaron $BASH_CIEGO_S7 llamadas Bash con CERO consultas a graphify/serena (últimos $VENTANA_DIAS_S7 días) — el grafo existe y nadie lo mira"
+      fi
+    fi
+  fi
 fi
 
 # ── Resumen ────────────────────────────────────────────────────────────────

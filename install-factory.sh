@@ -543,6 +543,82 @@ configure_claude_mcp_approval() {
     ok "Servidores MCP pre-aprobados en $settings: $servers"
 }
 
+# --- Hook de auditoría de tool-calls (PostToolUse, nivel de máquina) ---
+# El problema real que motiva esto: sin esto no hay forma de saber, después
+# del hecho, qué tools llamó una sesión ni en qué orden — solo lo que se ve
+# en pantalla mientras corre. Mecanismo 100% oficial de Claude Code (hooks),
+# nuestro y controlado (no dependemos de un paquete de terceros para algo tan
+# sensible como un log de auditoría) — mismo criterio que ya aplicamos a
+# MCP/Gradle: declarativo, idempotente, a nivel de máquina en
+# ~/.claude/settings.json para que cubra CUALQUIER sesión (interactiva o
+# `claude -p`) sin tener que tocar cada repo de la flota uno a uno. No
+# registra tool_output completo (podría ser enorme o contener secretos) —
+# solo su longitud en bytes. Es la fuente de datos de tools/audit-harness.sh
+# (check S7).
+configure_tool_audit_hook() {
+    local settings="$HOME/.claude/settings.json"
+    mkdir -p "$(dirname "$settings")"
+    [ -f "$settings" ] || echo '{}' > "$settings"
+
+    if ! command -v jq &> /dev/null; then
+        warn "jq no disponible; no se pudo instalar el hook de auditoría de tool-calls."
+        return 1
+    fi
+    if ! jq empty "$settings" &> /dev/null; then
+        warn "$settings no es JSON válido; no se toca (revísalo a mano)."
+        return 1
+    fi
+
+    local hook_script="$HOME/.local/bin/claude-tool-audit-hook.sh"
+    mkdir -p "$(dirname "$hook_script")"
+    cat > "$hook_script" <<'HOOK_EOF'
+#!/usr/bin/env bash
+# Hook PostToolUse instalado por install-factory.sh (neuroon-ai-context).
+# Registra cada tool-call de cualquier sesión de Claude Code en esta
+# máquina, en un JSONL append-only. Nunca debe romper la sesión que lo
+# disparó: cualquier fallo interno se traga y termina en exit 0.
+set -uo pipefail
+LOG_DIR="$HOME/.claude/audit"
+mkdir -p "$LOG_DIR" 2>/dev/null
+LOG_FILE="$LOG_DIR/tool-calls.jsonl"
+INPUT="$(cat)"
+TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+if command -v jq &> /dev/null; then
+    # Campo real: es `tool_response`, NO `tool_output` (lo que dice cierta
+    # doc desactualizada) — con el nombre equivocado esto SIEMPRE registraba
+    # 4 (la longitud de la cadena "null"). `duration_ms` sí es un campo real
+    # del payload.
+    printf '%s' "$INPUT" | jq -c --arg ts "$TS" '{
+        ts: $ts,
+        session_id: .session_id,
+        cwd: .cwd,
+        tool_name: .tool_name,
+        tool_input_summary: (.tool_input | tostring | .[0:200]),
+        tool_output_bytes: (.tool_response | tostring | length),
+        duration_ms: (.duration_ms // null)
+    }' >> "$LOG_FILE" 2>/dev/null
+fi
+exit 0
+HOOK_EOF
+    chmod +x "$hook_script"
+
+    if jq -e --arg cmd "$hook_script" \
+        '(.hooks.PostToolUse // []) | any(.hooks[]?.command == $cmd)' "$settings" &> /dev/null; then
+        ok "Hook de auditoría de tool-calls ya registrado en $settings."
+        return 0
+    fi
+
+    local hook_entry
+    hook_entry=$(jq -n --arg cmd "$hook_script" '{matcher: ".*", hooks: [{type: "command", command: $cmd}]}')
+
+    local tmp
+    tmp=$(mktemp)
+    jq --argjson entry "$hook_entry" \
+       '.hooks.PostToolUse = ((.hooks.PostToolUse // []) + [$entry])' \
+       "$settings" > "$tmp" && mv "$tmp" "$settings"
+    ok "Hook de auditoría de tool-calls instalado (log en \$HOME/.claude/audit/tool-calls.jsonl)."
+}
+
 # --- Runtimes que solo verificamos (instalarlos a ciegas sería demasiado
 # invasivo/específico de infra: JDK, Docker) ---
 check_readonly_runtimes() {
@@ -576,6 +652,7 @@ run_step "OpenSpec"      install_openspec
 run_step "Claude-Mem"    install_claude_mem
 run_step "Identidad Git" configure_git_identity
 run_step "Aprobación MCP" configure_claude_mcp_approval
+run_step "Hook auditoría tool-calls" configure_tool_audit_hook
 
 echo "=========================================================="
 echo "🎉 APROVISIONAMIENTO COMPLETADO"
@@ -588,5 +665,9 @@ echo "Para operar la matriz en esta máquina:"
 echo "1. Haz login en GitHub: gh auth login"
 echo "2. Haz login en Claude Pro: claude login"
 echo "3. Sincroniza la flota: ./sync-fleet.sh"
-echo "4. Arranca un worker: ./deploy-worker.sh <nombre-del-repo>"
+echo "4. Trabaja desde la raíz de la Matriz: claude (una sola sesión para toda la flota, ver .claude/settings.json)"
+echo ""
+echo "Diagnóstico:"
+echo "  - Tool-calls:    tail -f \$HOME/.claude/audit/tool-calls.jsonl"
+echo "  - Avisos de enrutado (symbol search): tail -f \$HOME/.claude/audit/symbol-search-misses.log"
 echo "=========================================================="
