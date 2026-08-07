@@ -386,6 +386,63 @@ install_graphify() {
     ok "Graphify instalado/actualizado ($(graphify --version 2>/dev/null))."
 }
 
+# --- serena (edición simbólica: los servidores serena-* de .mcp.json) ---
+# Sin esto, .mcp.json lanza `serena start-mcp-server` y en una máquina limpia
+# esos servidores no arrancan y nadie se entera (un MCP que no levanta se
+# reporta como "failed" en el arranque y la sesión sigue igual).
+# Instalador: `uv tool` es el que recomienda el proyecto; pipx es el
+# respaldo. Nunca los dos a la vez: ambos ponen sus lanzadores en
+# ~/.local/bin y se pisarían.
+SERENA_PIN="1.6.1"
+install_serena() {
+    local current=""
+    if binary_healthy serena -V; then
+        current=$(serena -V 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    fi
+    if [ "$current" = "$SERENA_PIN" ]; then
+        ok "serena ya está en el pin (v$current)."
+        ensure_serena_matriz_project
+        return 0
+    fi
+
+    if command -v uv &> /dev/null; then
+        info "Instalando serena v${SERENA_PIN} con uv tool (v${current:-ninguna} -> v${SERENA_PIN})..."
+        uv tool install --force "serena-agent==${SERENA_PIN}" || {
+            warn "uv tool no pudo instalar serena-agent==${SERENA_PIN}."; return 1; }
+    elif command -v pipx &> /dev/null; then
+        info "uv no disponible; instalando serena v${SERENA_PIN} con pipx..."
+        pipx install --force "serena-agent==${SERENA_PIN}" || {
+            warn "pipx no pudo instalar serena-agent==${SERENA_PIN}."; return 1; }
+    else
+        warn "Ni uv ni pipx disponibles: no se puede instalar serena (edición simbólica)."
+        return 1
+    fi
+
+    binary_healthy serena -V || { warn "serena instalado pero no responde a -V."; return 1; }
+    ok "serena instalado/actualizado ($(serena -V 2>/dev/null))."
+    ensure_serena_matriz_project
+}
+
+# La Matriz también es un proyecto de serena (para editar estos mismos
+# scripts): aquí no hay ni un .py, son bash. Su .serena/ está gitignoreado,
+# así que en un clon nuevo no existe y el servidor "serena" de .mcp.json —que
+# pide su proyecto POR NOMBRE— arrancaría sin proyecto. Los de la flota los
+# da de alta ./sync-fleet.sh, cuando ya hay clones.
+ensure_serena_matriz_project() {
+    if [ ! -f "$MATRIX_ROOT/.mcp.json" ]; then
+        warn "No hay .mcp.json en $MATRIX_ROOT: no doy de alta su proyecto de serena."
+        return 0
+    fi
+    if [ -f "$MATRIX_ROOT/.serena/project.yml" ]; then
+        ok "serena ya tiene proyecto declarado para la Matriz."
+        return 0
+    fi
+    info "Dando de alta la Matriz como proyecto de serena (lenguaje: bash)..."
+    (cd "$MATRIX_ROOT" && serena project create --name neuroon-ai-context --language bash .) > /dev/null || {
+        warn "No se pudo dar de alta el proyecto de serena de la Matriz."; return 1; }
+    ok "Matriz dada de alta como proyecto de serena."
+}
+
 # --- OpenSpec (spec-driven development para el rol Planner) ---
 # Versión FIJADA a propósito: subir de versión es una decisión consciente
 # (cambiar el pin + correr `openspec update` en cada repo de la flota), nunca
@@ -648,6 +705,7 @@ run_step "Node.js"       install_node
 run_step "Claude Code"   install_claude_code
 run_step "RTK"           install_rtk
 run_step "Graphify"      install_graphify
+run_step "serena"        install_serena
 run_step "OpenSpec"      install_openspec
 run_step "Claude-Mem"    install_claude_mem
 run_step "Identidad Git" configure_git_identity

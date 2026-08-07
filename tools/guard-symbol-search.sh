@@ -22,12 +22,10 @@
 # Tampoco toca lo que grep hace mejor: contar ocurrencias y buscar texto
 # literal, ni nada fuera de workspaces/.
 #
-# ESTADO ACTUAL DE LA FLOTA (2026-08-07): serena todavía NO está declarado en
-# ningún .mcp.json de esta Matriz (solo graphify-api, ver tools/guard-graph-
-# fresh.sh) — el aviso de abajo es a propósito de cara al futuro: en cuanto
-# se añada mcp__serena-<sufijo> para un repo, este hook ya lo recomienda sin
-# tocar nada más. Hasta entonces, el aviso no hace daño (nunca bloquea) pero
-# tampoco hay todavía una herramienta real a la que saltar.
+# ESTADO ACTUAL DE LA FLOTA (2026-08-07): serena-<sufijo> ya está declarado en
+# .mcp.json para los 6 repos de código (ver tools/sync-fleet.sh, que da de
+# alta el proyecto de serena de cada uno). El aviso de abajo ya apunta a una
+# herramienta real.
 set -uo pipefail
 
 permitir() {

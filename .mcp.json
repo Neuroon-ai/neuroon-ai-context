@@ -1,8 +1,70 @@
 {
   "mcpServers": {
+    "serena": {
+      "command": "serena",
+      "args": ["start-mcp-server", "--context", "claude-code",
+               "--project", "neuroon-ai-context",
+               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
+    },
+    "serena-api": {
+      "command": "serena",
+      "args": ["start-mcp-server", "--context", "claude-code",
+               "--project", "api-search-neuroon",
+               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
+    },
+    "serena-app": {
+      "command": "serena",
+      "args": ["start-mcp-server", "--context", "claude-code",
+               "--project", "app-search-neuroon",
+               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
+    },
+    "serena-widget": {
+      "command": "serena",
+      "args": ["start-mcp-server", "--context", "claude-code",
+               "--project", "app-search-widget-neuroon",
+               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
+    },
+    "serena-docs": {
+      "command": "serena",
+      "args": ["start-mcp-server", "--context", "claude-code",
+               "--project", "docs-search-widget-neuroon",
+               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
+    },
+    "serena-wp": {
+      "command": "serena",
+      "args": ["start-mcp-server", "--context", "claude-code",
+               "--project", "wordpress-plugin-neuroon-search",
+               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
+    },
+    "serena-engine": {
+      "command": "serena",
+      "args": ["start-mcp-server", "--context", "claude-code",
+               "--project", "api-search-engine",
+               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
+    },
     "graphify-api": {
       "command": "graphify-mcp",
       "args": ["workspaces/.graphify-data/api-search-neuroon/graphify-out/graph.json"]
+    },
+    "graphify-app": {
+      "command": "graphify-mcp",
+      "args": ["workspaces/.graphify-data/app-search-neuroon/graphify-out/graph.json"]
+    },
+    "graphify-widget": {
+      "command": "graphify-mcp",
+      "args": ["workspaces/.graphify-data/app-search-widget-neuroon/graphify-out/graph.json"]
+    },
+    "graphify-docs": {
+      "command": "graphify-mcp",
+      "args": ["workspaces/.graphify-data/docs-search-widget-neuroon/graphify-out/graph.json"]
+    },
+    "graphify-wp": {
+      "command": "graphify-mcp",
+      "args": ["workspaces/.graphify-data/wordpress-plugin-neuroon-search/graphify-out/graph.json"]
+    },
+    "graphify-engine": {
+      "command": "graphify-mcp",
+      "args": ["workspaces/.graphify-data/api-search-engine/graphify-out/graph.json"]
     }
   }
 }

@@ -18,7 +18,7 @@ Los proyectos que conforman la plataforma Neuroon están declarados como la "Ver
 
 ## Modelo operativo: una sesión, toda la flota
 
-Se trabaja con **una sola sesión Claude en esta raíz**, viendo todos los repos de `workspaces/` a la vez — no un worker por repo (`deploy-worker.sh` quedó en desuso el 2026-08-07, ver `README.md`). El grafo de código (graphify) vive por eso centralizado fuera de cada repo, en `workspaces/.graphify-data/<repo>/` (`tools/sync-graph.sh`), y `.mcp.json` en esta raíz declara un servidor por repo con sufijo (`graphify-api`, y así sucesivamente conforme se añadan más).
+Se trabaja con **una sola sesión Claude en esta raíz**, viendo todos los repos de `workspaces/` a la vez — no un worker por repo (`deploy-worker.sh` quedó en desuso el 2026-08-07, ver `README.md`). El grafo de código (graphify) vive por eso centralizado fuera de cada repo, en `workspaces/.graphify-data/<repo>/` (`tools/sync-graph.sh`), y `.mcp.json` en esta raíz declara `graphify-<sufijo>`/`serena-<sufijo>` por repo (`api`, `app`, `widget`, `docs`, `wp`, `engine` — ver `tools/session-brief.sh`). `./sync-fleet.sh` mantiene ambos: da de alta el proyecto de serena de cada repo y refresca su grafo.
 
 ### Puertas mecánicas, no prosa
 

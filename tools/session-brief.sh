@@ -71,13 +71,11 @@ Tienes MCPs que rinden mucho más que grep/bash para estas tareas. Úsalos:
 \`-widget\` = app-search-widget-neuroon · \`-docs\` = docs-search-widget-neuroon ·
 \`-wp\` = wordpress-plugin-neuroon-search · \`-engine\` = api-search-engine.
 
-**Estado real de los MCP (2026-08-07)**: solo \`graphify-api\` está declarado en
-\`.mcp.json\` — el resto de repos aún no tienen grafo bootstrapeado (correr
-\`./tools/sync-graph.sh workspaces/<repo>\` y añadir \`graphify-<sufijo>\` a
-\`.mcp.json\` + \`repositories.json\` para activarlos uno a uno). **serena no
-está declarado para NINGÚN repo todavía** — si \`tools/guard-symbol-search.sh\`
-te sugiere \`mcp__serena-*\`, es una recomendación de cara al futuro, no una
-herramienta que exista ya; usa grep mientras tanto.
+**Estado real de los MCP (2026-08-07)**: \`graphify-<sufijo>\` y \`serena-<sufijo>\`
+están declarados en \`.mcp.json\` para los 6 repos de código, más \`serena\` a
+secas para la propia Matriz. \`./sync-fleet.sh\` mantiene esto — da de alta el
+proyecto de serena de cada repo y refresca su grafo si ya estaba declarado en
+\`mcp_servers\`.
 
 **Si no ves un servidor que esta tabla nombra**, tu sesión es anterior a su
 alta: los MCP se fijan al arrancar y no se aplican en caliente. Compruébalo

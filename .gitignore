@@ -11,3 +11,6 @@ CLAUDE.local.md
 gh.tar.gz
 *.log
 .DS_Store
+
+# Estado local de herramientas MCP (serena crea esto al activarse en el cwd)
+.serena/

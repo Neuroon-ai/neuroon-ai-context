@@ -76,9 +76,10 @@ solo estorba.
 - `tools/audit-harness.sh` (S7) — agrega ese log a lo largo del tiempo, para
   que "¿se está usando el MCP de verdad?" sea un número, no una impresión.
 
-Solo `graphify-api` está declarado hoy en `.mcp.json` (único repo con grafo
-bootstrapeado). `serena` no está configurado para ningún repo todavía — los
-avisos de `guard-symbol-search.sh` son de cara a cuando se añada.
+`graphify-<sufijo>` y `serena-<sufijo>` están declarados en `.mcp.json` para
+los 6 repos de código de la flota (`status` queda fuera, sin código propio).
+`./sync-fleet.sh` los mantiene: da de alta el proyecto de serena de cada repo
+y refresca su grafo en cada pasada.
 
 ## Templates y documentación
 
