@@ -27,7 +27,9 @@ Se trabaja con **una sola sesión Claude en esta raíz**, viendo todos los repos
 - `mcp__serena-<sufijo>__*` — LSP real por lenguaje (`find_symbol`, `find_referencing_symbols`, `rename_symbol`): para localizar una declaración o ver sus usos, esto gana a grep porque lee el árbol sintáctico, no adivina por texto.
 - `grep`/`rg` sigue siendo lo correcto para texto literal o contar ocurrencias — el arnés no penaliza eso, solo el patrón contrario (usar grep para lo que el MCP resuelve mejor).
 
-La tabla completa tarea→herramienta, con el estado real de qué MCP existe para qué repo hoy, la inyecta `tools/session-brief.sh` al arrancar la sesión (y al compactar) — no se repite aquí porque quedaría desactualizada; esa tabla se mide, no se redacta a mano.
+**Límite fijo de graphify, no una preferencia de estilo:** no ve la inyección por constructor (muy usada en `api-search-neuroon`) — un `get_neighbors` puede devolver 1 referenciador donde grep encuentra 20 ficheros reales. El grafo sirve para forma/comunidades/radio de impacto; para **contar o localizar llamadores con precisión**, `find_referencing_symbols` de serena o grep, nunca el grafo a ciegas. Esto no cambia con el estado de la flota, así que no hace falta esperar a `session-brief.sh` para saberlo.
+
+La tabla completa tarea→herramienta, con el estado real de qué MCP existe para qué repo hoy, la inyecta `tools/session-brief.sh` al arrancar la sesión (y al compactar) — no se repite aquí porque esa parte sí cambia; esa tabla se mide, no se redacta a mano. Si quieres comprobar el uso real sin esperar a una auditoría, los logs viven en `~/.claude/audit/tool-calls.jsonl` (todas las tool-calls) y `~/.claude/audit/symbol-search-misses.log` (avisos de `guard-symbol-search.sh`).
 
 ### Puertas mecánicas, no prosa
 
