@@ -65,6 +65,29 @@
     "graphify-engine": {
       "command": "graphify-mcp",
       "args": ["workspaces/.graphify-data/api-search-engine/graphify-out/graph.json"]
+    },
+    "coolify": {
+      "command": "sh",
+      "args": ["-c", "set -a; . \"$HOME/projects/neuroon-ai-context/.env\" 2>/dev/null; set +a; exec npx -y mcp-remote https://colify.neuroon.ai/mcp --header \"Authorization: Bearer ${COOLIFY_MCP_TOKEN}\""]
+    },
+    "coolify-ops": {
+      "command": "sh",
+      "args": ["-c", "set -a; . \"$HOME/projects/neuroon-ai-context/.env\" 2>/dev/null; set +a; exec npx -y @masonator/coolify-mcp@latest"],
+      "env": {
+        "COOLIFY_BASE_URL": "https://colify.neuroon.ai"
+      }
+    },
+    "hetzner": {
+      "command": "sh",
+      "args": ["-c", "set -a; . \"$HOME/projects/neuroon-ai-context/.env\" 2>/dev/null; set +a; exec npx -y @lazyants/hetzner-mcp-server"]
+    },
+    "stripe": {
+      "command": "sh",
+      "args": ["-c", "set -a; . \"$HOME/projects/neuroon-ai-context/.env\" 2>/dev/null; set +a; exec npx -y mcp-remote https://mcp.stripe.com --header \"Authorization: Bearer ${STRIPE_RESTRICTED_KEY}\""]
+    },
+    "gcloud": {
+      "command": "sh",
+      "args": ["-c", "exec npx -y @google-cloud/gcloud-mcp -c \"$HOME/projects/neuroon-ai-context/tools/gcloud-mcp-allow.json\""]
     }
   }
 }

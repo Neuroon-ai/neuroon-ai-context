@@ -48,10 +48,44 @@ estado_de_los_grafos() {
   done
 }
 
+# MCPs de infraestructura (.mcp.json + .env). Solo se mide PRESENCIA del
+# token en el entorno — su valor no se imprime jamás.
+estado_de_la_infra() {
+  local nombre server var
+  for entrada in "coolify:COOLIFY_MCP_TOKEN:Coolify oficial (read; exige instancia >=4.1 + toggle MCP)" \
+                 "coolify-ops:COOLIFY_ACCESS_TOKEN:Coolify ops StuMason (restart/deploy/logs)" \
+                 "hetzner:HETZNER_API_TOKEN:Hetzner Cloud lazyants (snapshot/reboot/firewall)" \
+                 "stripe:STRIPE_RESTRICTED_KEY:Stripe oficial mcp.stripe.com (restricted key, sin conector)"; do
+    server="${entrada%%:*}"
+    var="$(echo "$entrada" | cut -d: -f2)"
+    nombre="${entrada#*:*:}"
+    largo="$(awk -F= -v k="$var" 'index($0, k"=") == 1 {v=substr($0, length(k)+2); gsub(/^['"'"'"]|['"'"'"]$/, "", v); print length(v); exit}' "$MATRIX_ROOT/.env" 2>/dev/null)"
+    if ! jq -e ".mcpServers.\"$server\"" "$MATRIX_ROOT/.mcp.json" >/dev/null 2>&1; then
+      echo "  - $server: NO declarado en .mcp.json — $nombre"
+    elif [ "${largo:-0}" -gt 0 ]; then
+      echo "  - $server: declarado y $var relleno en .env — $nombre"
+    else
+      echo "  - $server: declarado pero $var VACÍO en .env — no levantará; rellena .env (ver .env.example) y reinicia"
+    fi
+  done
+  if jq -e '.mcpServers.gcloud' "$MATRIX_ROOT/.mcp.json" >/dev/null 2>&1; then
+    cuenta="$(gcloud auth list --filter=status:ACTIVE --format='value(account)' 2>/dev/null | head -1)"
+    if [ -n "$cuenta" ]; then
+      echo "  - gcloud: declarado y gcloud autenticado ($cuenta) — Cloud Build/Artifact Registry vía allowlist (tools/gcloud-mcp-allow.json)"
+    else
+      echo "  - gcloud: declarado pero SIN cuenta gcloud activa — corre 'gcloud auth login' y reinicia"
+    fi
+  fi
+}
+
 BRIEF="$(cat <<EOF
 # Estado de la flota Neuroon (medido por tools/session-brief.sh)
 
 $(estado_de_los_grafos)
+
+# MCPs de infraestructura (medido: declaración + token presente)
+
+$(estado_de_la_infra)
 
 # Enrutado obligatorio de tarea → herramienta
 
@@ -66,6 +100,14 @@ Tienes MCPs que rinden mucho más que grep/bash para estas tareas. Úsalos:
 | Verificar un cambio en un frontend (Next.js/Vite/Docusaurus) | \`npm run build\`/\`npm test\` dentro de ese repo | dar por bueno que compila |
 | Verificar api-search-engine (Python) | \`pytest\` dentro de workspaces/api-search-engine | dar por bueno que corre |
 | Buscar texto literal, contar ocurrencias | grep / rg | el grafo (subreporta, ver abajo) |
+| Ver qué hay desplegado en la plataforma (apps, estado, deploys) | \`mcp__coolify__*\` (oficial, read) | SSH, curl a la API a mano |
+| Operar la plataforma (restart, redeploy, logs, envs) | \`mcp__coolify-ops__*\` | SSH a pelo |
+| La máquina Hetzner (snapshot pre-update, reboot, firewall) | \`mcp__hetzner__*\` | CLI (decidido: no se usa) |
+| Consultar Stripe live (suscripciones, invoices, webhooks, prices) | \`mcp__stripe__*\` (oficial, restricted key) | el conector de claude.ai (deprecado aquí), curl a mano |
+| El pipeline de deploys en GCP (builds, logs, Artifact Registry) | \`mcp__gcloud__*\` (allowlist builds/artifacts; --format SIN espacios) | gcloud a pelo en Bash |
+
+**SSH al servidor es break-glass**, no gestión: solo si el SO está roto y
+ningún MCP llega, y siempre contándoselo al humano primero.
 
 **Sufijo por repo**: \`-api\` = api-search-neuroon · \`-app\` = app-search-neuroon ·
 \`-widget\` = app-search-widget-neuroon · \`-docs\` = docs-search-widget-neuroon ·
