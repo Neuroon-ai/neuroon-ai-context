@@ -62,7 +62,7 @@ el merge final.
 
 | Primitiva | En esta flota, HOY (diseño) |
 |---|---|
-| **Automations** | Ninguna activa. Futuro candidato: cron que dispare `deploy-worker.sh` + maker/checker sobre una sola feature `pending` de un repo ya con harness en verde sostenido. **No activado.** |
+| **Automations** | Ninguna activa. Futuro candidato: cron que abra una sesión en la raíz de la Matriz (el modelo operativo actual — `deploy-worker.sh`, el disparador que este documento nombraba antes, quedó en desuso el 2026-08-07) y ejecute maker/checker sobre una sola Issue de un repo con arnés en verde sostenido. **No activado.** |
 | **Worktrees** | El Maker trabaja siempre en una rama/worktree propia por feature; nunca en la rama por defecto del repo. El Verifier siempre parte de un checkout limpio del PR, nunca reutiliza el worktree del Maker. |
 | **Skills** | Futuras candidatas: `scaffold-harness`, `audit-harness` como skills invocables directamente por los agentes, en vez de solo scripts de la Matriz. |
 | **Connectors** | `gh` CLI (Issues, PRs), nada más por ahora — sin Slack/Jira/etc. |
@@ -89,9 +89,12 @@ Escalera (de menor a mayor autonomía):
 Justificación:
 - Partimos de cero en cron/automatización — ningún repo de la flota tiene hoy
   loop/progress-tracking automatizado ni Automations activas.
-- `tools/audit-harness.sh` aún no tiene historial: ningún repo de la flota ha
-  demostrado un baseline CRITICAL-verde sostenido todavía (ver
-  `repositories.json` → `harness_ready`/`harness_notes` por proyecto).
+- `tools/audit-harness.sh` ya mide 0 CRITICAL en los repos de código, pero
+  "verde sostenido" es otra cosa: los flags `harness_ready`/`graph_ready` de
+  `repositories.json` siguen en `false` a propósito, a la espera de varias
+  rondas seguidas en verde. Además el veredicto se endureció (un check que no
+  se puede medir ya sale con código 2 y NO cuenta como verde), así que el
+  historial anterior a ese cambio no es comparable.
 - La flota mezcla stacks muy distintos (Java/Maven, Python, PHP/WordPress,
   TypeScript) — un loop desatendido necesita evidencia de que el Verifier
   atrapa errores reales en CADA stack antes de confiar en él, no solo en uno.

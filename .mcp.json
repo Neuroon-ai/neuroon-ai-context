@@ -43,47 +43,47 @@
                "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
     },
     "graphify-api": {
-      "command": "graphify-mcp",
-      "args": ["workspaces/.graphify-data/api-search-neuroon/graphify-out/graph.json"]
+      "command": "sh",
+      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/api-search-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-api: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/api-search-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
     },
     "graphify-app": {
-      "command": "graphify-mcp",
-      "args": ["workspaces/.graphify-data/app-search-neuroon/graphify-out/graph.json"]
+      "command": "sh",
+      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/app-search-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-app: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/app-search-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
     },
     "graphify-widget": {
-      "command": "graphify-mcp",
-      "args": ["workspaces/.graphify-data/app-search-widget-neuroon/graphify-out/graph.json"]
+      "command": "sh",
+      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/app-search-widget-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-widget: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/app-search-widget-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
     },
     "graphify-docs": {
-      "command": "graphify-mcp",
-      "args": ["workspaces/.graphify-data/docs-search-widget-neuroon/graphify-out/graph.json"]
+      "command": "sh",
+      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/docs-search-widget-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-docs: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/docs-search-widget-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
     },
     "graphify-wp": {
-      "command": "graphify-mcp",
-      "args": ["workspaces/.graphify-data/wordpress-plugin-neuroon-search/graphify-out/graph.json"]
+      "command": "sh",
+      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/wordpress-plugin-neuroon-search/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-wp: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/wordpress-plugin-neuroon-search\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
     },
     "graphify-engine": {
-      "command": "graphify-mcp",
-      "args": ["workspaces/.graphify-data/api-search-engine/graphify-out/graph.json"]
+      "command": "sh",
+      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/api-search-engine/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-engine: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/api-search-engine\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
     },
     "coolify": {
       "command": "sh",
-      "args": ["-c", "set -a; . \"$HOME/projects/neuroon-ai-context/.env\" 2>/dev/null; set +a; exec npx -y mcp-remote https://colify.neuroon.ai/mcp --header \"Authorization: Bearer ${COOLIFY_MCP_TOKEN}\""]
+      "args": ["-c", "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"coolify: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y mcp-remote https://colify.neuroon.ai/mcp --header \"Authorization: Bearer ${COOLIFY_MCP_TOKEN}\""]
     },
     "coolify-ops": {
       "command": "sh",
-      "args": ["-c", "set -a; . \"$HOME/projects/neuroon-ai-context/.env\" 2>/dev/null; set +a; exec npx -y @masonator/coolify-mcp@latest"],
+      "args": ["-c", "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"coolify-ops: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y @masonator/coolify-mcp@latest"],
       "env": {
         "COOLIFY_BASE_URL": "https://colify.neuroon.ai"
       }
     },
     "hetzner": {
       "command": "sh",
-      "args": ["-c", "set -a; . \"$HOME/projects/neuroon-ai-context/.env\" 2>/dev/null; set +a; exec npx -y @lazyants/hetzner-mcp-server"]
+      "args": ["-c", "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"hetzner: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y @lazyants/hetzner-mcp-server"]
     },
     "stripe": {
       "command": "sh",
-      "args": ["-c", "set -a; . \"$HOME/projects/neuroon-ai-context/.env\" 2>/dev/null; set +a; exec npx -y mcp-remote https://mcp.stripe.com --header \"Authorization: Bearer ${STRIPE_RESTRICTED_KEY}\""]
+      "args": ["-c", "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"stripe: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y mcp-remote https://mcp.stripe.com --header \"Authorization: Bearer ${STRIPE_RESTRICTED_KEY}\""]
     },
     "gcloud": {
       "command": "sh",

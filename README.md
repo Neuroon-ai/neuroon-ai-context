@@ -45,13 +45,13 @@ claude
 | `sync-fleet.sh` | Clona/actualiza todos los repos declarados en `repositories.json`. |
 | `plan-feature.sh <repo>` | Abre una sesión de planificación (Arquitecto/PO) de solo lectura: crea la Issue en GitHub y, si el repo tiene OpenSpec, el change correspondiente. |
 | `deploy-worker.sh <repo> [--yes] [--issue <N>]` | ⚠️ **En desuso** (ver arriba) — desplegaba y arrancaba un worker autónomo escopado a un solo repo. Se conserva sin borrar, no se usa en el flujo actual. |
-| `init.sh` | Valida la línea base del propio repo Matriz (bash + JSON) y la identidad de Git. |
+| `init.sh` | Valida la línea base del propio repo Matriz: ShellCheck sobre todos los `.sh` y `jq` sobre todos los JSON versionados (`repositories.json`, `.mcp.json`, `.claude/settings.json`, `tools/gcloud-mcp-allow.json`), más la identidad de Git. Valida SIEMPRE el árbol donde vive, no el cwd. Sale con `2` si alguna comprobación se omitió por falta de herramientas. |
 
 ## Herramientas (`tools/`)
 
 | Script | Rol |
 |--------|-----|
-| `tools/audit-harness.sh [ruta]` | Audita el cumplimiento del arnés de un repo (PASS/WARN/FAIL por sección S1-S7); detecta el stack (Gradle, Maven, Node/Next, Python, WordPress/PHP). S7 mide el uso real de MCP vs. Bash de los últimos 14 días a partir del log de auditoría. |
+| `tools/audit-harness.sh [ruta]` | Audita el cumplimiento del arnés de un repo (PASS/WARN/FAIL/**INCÓGNITA** por sección S1-S7); detecta el stack (Gradle, Maven, Node/Next, Python, WordPress/PHP). S7 mide el uso real de MCP vs. Bash de los últimos 14 días a partir del log de auditoría, y cuenta los avisos de `guard-symbol-search.sh`. Códigos de salida: `0` verde, `1` algún CRITICAL en fallo, **`2` hay checks que no se pudieron medir** (no medir no es verde). |
 | `tools/scaffold-harness.sh --target <dir> [--force] [--default-branch <rama>]` | Genera el esqueleto de arnés que falte en un repo (idempotente, nunca sobreescribe sin `--force`). |
 | `tools/scaffold-mcp.sh <repo> --target <dir>` | Sincroniza el `.mcp.json` de un repo target contra `mcp_servers` declarados en `repositories.json`. Reliquia del modelo de un `.mcp.json` por repo (`deploy-worker.sh`); con el `.mcp.json` centralizado en la raíz, ya no hace falta para operar. |
 | `tools/sync-graph.sh [ruta]` | (Re)construye el grafo de código (graphify) de un repo en la caché centralizada `workspaces/.graphify-data/<repo>/`, con sello `.built-at-commit`. Idempotente: si el grafo ya corresponde al HEAD actual, no hace nada. |
@@ -83,8 +83,8 @@ y refresca su grafo en cada pasada.
 
 ## Templates y documentación
 
-- `templates/{maker,verifier,worker}-prompt.md` — prompts versionados del patrón Planner→Maker→Verifier, renderizados por `deploy-worker.sh`/`plan-feature.sh` (heredado del modelo en desuso).
-- `templates/mcp/*.json` — plantillas de servidores MCP que `scaffold-mcp.sh` inyecta en el `.mcp.json` de un repo target.
+- `templates/{maker,verifier,worker}-prompt.md` — prompts versionados del patrón Planner→Maker→Verifier. Hoy **solo `worker-prompt.md` se renderiza**, y solo desde `deploy-worker.sh` (en desuso); `maker-prompt.md` y `verifier-prompt.md` no los usa ningún script todavía, y `plan-feature.sh` no renderiza ninguna plantilla.
+- `templates/mcp/*.json` — plantillas de servidores MCP para `scaffold-mcp.sh`. ⚠️ **Hoy no casan**: el script compone `templates/mcp/<nombre-del-servidor>.json` y los nombres declarados en `repositories.json` llevan sufijo por repo (`graphify-api`, `serena-api`…), así que la única plantilla existente (`graphify.json`) no se selecciona nunca. Inocuo mientras el `.mcp.json` centralizado de la raíz sea el que manda.
 - `docs/LOOP-ENGINEERING.md` — diseño del patrón Maker/Verifier y la escalera de madurez L1-L5 para automatización (documento de diseño; nada de esto se activa solo).
 
 ## Verdad absoluta

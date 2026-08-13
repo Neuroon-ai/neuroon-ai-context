@@ -1,6 +1,7 @@
 {
   "org": "Neuroon-ai",
   "base_path": "./workspaces",
+  "_nota_notas": "harness_notes y graph_notes NO llevan cifras ni sellos escritos a mano: caducaban en el siguiente rebuild y nadie los actualizaba. El estado real se MIDE: `./tools/audit-harness.sh workspaces/<repo>` para el arnés, y workspaces/.graphify-data/<repo>/graphify-out/.graph-stats (fecha, commit y nodos/edges/comunidades, escrito por tools/sync-graph.sh) para el grafo. Los flags harness_ready/graph_ready los sube un humano cuando el verde se sostenga varias rondas, no un script.",
   "projects": [
     {
       "name": "api-search-neuroon",
@@ -9,9 +10,9 @@
       "default_branch": "develop",
       "agent_enabled": true,
       "harness_ready": false,
-      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 2 WARN (solo falta .gitignore cubriendo target/ y graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
+      "harness_notes": "Mide con ./tools/audit-harness.sh workspaces/api-search-neuroon. Pendiente de sostener el verde varias rondas antes de pasar a true.",
       "graph_ready": false,
-      "graph_notes": "2026-08-07: reconstruido en la caché centralizada workspaces/.graphify-data/api-search-neuroon/ (ver tools/sync-graph.sh): graph.json (24022 nodos, 73492 edges, 682 comunidades), sello .built-at-commit == HEAD (fb169ee). S6 de audit-harness.sh en verde (4/4). 127 archivos .sql no se procesaron (falta tree_sitter_sql — pip install \"graphifyy[sql]\"); 9 ficheros de fixtures/config sin nodos (normal). Pasar graph_ready a true cuando se sostenga en verde varias rondas — esta es la primera.",
+      "graph_notes": "Grafo en workspaces/.graphify-data/api-search-neuroon/ (cifras y sello en .graph-stats). Los .sql no se procesan: falta tree_sitter_sql (pip install \"graphifyy[sql]\").",
       "mcp_servers": [
         "graphify-api",
         "serena-api"
@@ -24,9 +25,9 @@
       "default_branch": "main",
       "agent_enabled": false,
       "harness_ready": false,
-      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 1 WARN (solo falta graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
+      "harness_notes": "Mide con ./tools/audit-harness.sh workspaces/app-search-neuroon. Pendiente de sostener el verde varias rondas antes de pasar a true.",
       "graph_ready": false,
-      "graph_notes": "2026-08-07: construido en workspaces/.graphify-data/app-search-neuroon/ (ver tools/sync-graph.sh): graph.json (9690 nodos, 22401 edges, 368 comunidades), sello == HEAD (275d5a9). S6 de audit-harness.sh en verde. Pasar graph_ready a true cuando se sostenga en verde varias rondas — esta es la primera.",
+      "graph_notes": "Grafo en workspaces/.graphify-data/app-search-neuroon/ (cifras y sello en .graph-stats).",
       "mcp_servers": [
         "graphify-app",
         "serena-app"
@@ -39,9 +40,9 @@
       "default_branch": "main",
       "agent_enabled": false,
       "harness_ready": false,
-      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 3 WARN (falta scripts/verify-feature.sh — sin convención estándar para PHP/WordPress, definir a mano; falta graphify-out/graph.json).",
+      "harness_notes": "Mide con ./tools/audit-harness.sh workspaces/wordpress-plugin-neuroon-search. WARN estructural: no hay convención estándar de verificación para PHP/WordPress — hay que escribir scripts/verify-feature.sh a mano.",
       "graph_ready": false,
-      "graph_notes": "2026-08-07: construido en workspaces/.graphify-data/wordpress-plugin-neuroon-search/ (ver tools/sync-graph.sh): graph.json (4323 nodos, 8172 edges, 260 comunidades), sello == HEAD (d5a9731). PHP sí lo procesa graphify. S6 de audit-harness.sh en verde. Pasar graph_ready a true cuando se sostenga en verde varias rondas — esta es la primera.",
+      "graph_notes": "Grafo en workspaces/.graphify-data/wordpress-plugin-neuroon-search/ (cifras y sello en .graph-stats). graphify SÍ indexa su PHP.",
       "mcp_servers": [
         "graphify-wp",
         "serena-wp"
@@ -54,9 +55,9 @@
       "default_branch": "main",
       "agent_enabled": false,
       "harness_ready": false,
-      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 1 WARN (solo falta graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
+      "harness_notes": "Mide con ./tools/audit-harness.sh workspaces/app-search-widget-neuroon. Pendiente de sostener el verde varias rondas antes de pasar a true.",
       "graph_ready": false,
-      "graph_notes": "2026-08-07: construido en workspaces/.graphify-data/app-search-widget-neuroon/ (ver tools/sync-graph.sh): graph.json (2744 nodos, 6924 edges, 171 comunidades), sello == HEAD (0d2fed7). S6 de audit-harness.sh en verde. Pasar graph_ready a true cuando se sostenga en verde varias rondas — esta es la primera.",
+      "graph_notes": "Grafo en workspaces/.graphify-data/app-search-widget-neuroon/ (cifras y sello en .graph-stats).",
       "mcp_servers": [
         "graphify-widget",
         "serena-widget"
@@ -69,9 +70,9 @@
       "default_branch": "main",
       "agent_enabled": false,
       "harness_ready": false,
-      "harness_notes": "Auditado el 2026-07-24: 4 CRITICAL. No es un repo de código de la plataforma (Upptime, sin lógica propia) — no es prioridad para Harness Engineering.",
+      "harness_notes": "No es un repo de código de la plataforma (Upptime, sin lógica propia) — fuera de alcance de Harness Engineering, no es prioridad.",
       "graph_ready": false,
-      "graph_notes": "Fuera de alcance (Upptime).",
+      "graph_notes": "Fuera de alcance (Upptime): sin código propio que indexar.",
       "mcp_servers": []
     },
     {
@@ -81,9 +82,9 @@
       "default_branch": "main",
       "agent_enabled": false,
       "harness_ready": false,
-      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 1 WARN (solo falta graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
+      "harness_notes": "Mide con ./tools/audit-harness.sh workspaces/docs-search-widget-neuroon. Pendiente de sostener el verde varias rondas antes de pasar a true.",
       "graph_ready": false,
-      "graph_notes": "2026-08-07: construido en workspaces/.graphify-data/docs-search-widget-neuroon/ (ver tools/sync-graph.sh): graph.json (328 nodos, 493 edges, 21 comunidades — repo pequeño, mayoría Markdown sin AST), sello == HEAD (870f0bc). 2 .sql sin procesar (falta tree_sitter_sql). S6 de audit-harness.sh en verde. Pasar graph_ready a true cuando se sostenga en verde varias rondas — esta es la primera.",
+      "graph_notes": "Grafo en workspaces/.graphify-data/docs-search-widget-neuroon/ (cifras y sello en .graph-stats). Repo pequeño y mayoritariamente Markdown, así que el grafo es pequeño por naturaleza. Los .sql no se procesan: falta tree_sitter_sql.",
       "mcp_servers": [
         "graphify-docs",
         "serena-docs"
@@ -96,9 +97,9 @@
       "default_branch": "main",
       "agent_enabled": false,
       "harness_ready": false,
-      "harness_notes": "Re-auditado el 2026-07-24 tras tools/scaffold-harness.sh: 0 CRITICAL, 1 WARN (solo falta graphify-out/graph.json). Pasar a true cuando se sostenga en verde varias rondas.",
+      "harness_notes": "Mide con ./tools/audit-harness.sh workspaces/api-search-engine. Pendiente de sostener el verde varias rondas antes de pasar a true.",
       "graph_ready": false,
-      "graph_notes": "2026-08-07: construido en workspaces/.graphify-data/api-search-engine/ (ver tools/sync-graph.sh): graph.json (1465 nodos, 2541 edges, 98 comunidades), sello == HEAD (4daeb98). S6 de audit-harness.sh en verde. Pasar graph_ready a true cuando se sostenga en verde varias rondas — esta es la primera.",
+      "graph_notes": "Grafo en workspaces/.graphify-data/api-search-engine/ (cifras y sello en .graph-stats).",
       "mcp_servers": [
         "graphify-engine",
         "serena-engine"

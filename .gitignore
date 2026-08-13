@@ -12,6 +12,9 @@ gh.tar.gz
 *.log
 .DS_Store
 
+# Dependencias de node de las herramientas (la Matriz no tiene código JS propio)
+node_modules/
+
 # Estado local de herramientas MCP (serena crea esto al activarse en el cwd)
 .serena/
 !.env.example

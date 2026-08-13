@@ -42,9 +42,22 @@ if command -v envsubst &> /dev/null; then
 else
   BASE_PATH_EXPANDED="$RAW_BASE_PATH"
 fi
+# Raíz de DATOS (workspaces/), distinta de la raíz de CÓDIGO — ver CLAUDE.md.
+# Sin esto, ejecutado desde un git worktree secundario este script clona el
+# repo objetivo DENTRO del worktree (gitignorado, invisible en git status).
+FLEET_ROOT="$MATRIX_ROOT"
+if command -v git >/dev/null 2>&1; then
+  _main_wt="$( { git -C "$MATRIX_ROOT" worktree list --porcelain 2>/dev/null || true; } \
+               | sed -n '1s/^worktree //p' )"
+  if [ -n "$_main_wt" ] && [ -d "$_main_wt" ] && [ -f "$_main_wt/repositories.json" ]; then
+    FLEET_ROOT="$_main_wt"
+  fi
+  unset _main_wt
+fi
+
 case "$BASE_PATH_EXPANDED" in
   /*) WORKSPACES_DIR="$BASE_PATH_EXPANDED" ;;
-  *) WORKSPACES_DIR="$MATRIX_ROOT/${BASE_PATH_EXPANDED#./}" ;;
+  *) WORKSPACES_DIR="$FLEET_ROOT/${BASE_PATH_EXPANDED#./}" ;;
 esac
 WORK_DIR="$WORKSPACES_DIR/$REPO_NAME"
 
@@ -170,16 +183,23 @@ fi
 # Bootstrap de una sola vez — mismo principio que el arnés: instalar cosas
 # es una acción que debe verse, nunca una decisión silenciosa de un script.
 GRAPH_MISSING=0
-[ -f "graphify-out/graph.json" ] || GRAPH_MISSING=1
-if command -v graphify &>/dev/null && graphify hook status 2>/dev/null | grep -q "not installed"; then
-  GRAPH_MISSING=1
-fi
+# La caché del grafo se centralizó el 2026-08-07 en
+# workspaces/.graphify-data/<repo>/ (ver tools/sync-graph.sh): buscarlo dentro
+# del clon daba SIEMPRE "falta el grafo", estuviera al día o no. Se comprueba
+# donde vive de verdad. Sin hooks por repo: el grafo lo mantiene la Matriz.
+GRAPH_JSON_DW="$FLEET_ROOT/workspaces/.graphify-data/$(basename "$WORK_DIR")/graphify-out/graph.json"
+[ -f "$GRAPH_JSON_DW" ] || GRAPH_MISSING=1
 
 if [ "$GRAPH_MISSING" -eq 1 ]; then
   echo ""
-  echo "🕸️  El grafo de código (graphify-out/graph.json) no existe o sus hooks de auto-actualización no están instalados."
+  echo "🕸️  El grafo de código no existe en la caché centralizada ($GRAPH_JSON_DW)."
   if confirm "¿Hacer el bootstrap ahora con sync-graph.sh?"; then
-    "$MATRIX_ROOT/tools/sync-graph.sh" "$WORK_DIR"
+    # Tolerado a propósito: sync-graph.sh sale con 3/4/5 cuando no puede
+    # construir el grafo, y con `set -e` un bare call abortaría el despliegue
+    # entero a mitad.
+    RC_DW=0
+    "$MATRIX_ROOT/tools/sync-graph.sh" "$WORK_DIR" || RC_DW=$?
+    [ "$RC_DW" -eq 0 ] || echo "   ⚠️  sync-graph.sh no dejó el grafo al día (código $RC_DW) — se sigue sin grafo."
   else
     echo "   Omitido. El worker puede seguir sin grafo de código (no recomendado)."
   fi
@@ -196,11 +216,12 @@ fi
 # arnés roto el worker no tendría ni init.sh/feature_list.json que leer.
 echo ""
 echo "🔍 Auditando arnés..."
-if "$MATRIX_ROOT/tools/audit-harness.sh" "$WORK_DIR"; then
-  AUDIT_OK=1
-else
-  AUDIT_OK=0
-fi
+# audit-harness.sh tiene TRES salidas: 0 verde, 1 algún CRITICAL en fallo,
+# 2 sin CRITICAL pero con checks no medibles. Un `if` las colapsaba en dos y
+# le decía al humano "CRITICAL en rojo" con 0 CRITICAL fallando.
+RC_AUDIT=0
+"$MATRIX_ROOT/tools/audit-harness.sh" "$WORK_DIR" || RC_AUDIT=$?
+if [ "$RC_AUDIT" -eq 0 ]; then AUDIT_OK=1; else AUDIT_OK=0; fi
 
 # Renderizar el worker-prompt versionado (templates/worker-prompt.md) con el
 # contexto de este repo. Se guarda FUERA del repo target, en .prompts dentro
@@ -232,18 +253,22 @@ fi
 
 echo ""
 echo "✅ Worker desplegado en $WORK_DIR"
-if [ "$AUDIT_OK" -eq 1 ]; then
-  echo "   Arnés: 🟢 CRITICAL en verde"
-else
-  echo "   Arnés: 🔴 hay CRITICAL en rojo — revisa el detalle de arriba antes de lanzar al agente"
-fi
+case "$RC_AUDIT" in
+  0) echo "   Arnés: 🟢 CRITICAL en verde y todo medible" ;;
+  2) echo "   Arnés: ❔ sin CRITICAL en fallo, pero hay checks que NO se pudieron medir — no medir no es verde" ;;
+  *) echo "   Arnés: 🔴 hay CRITICAL en rojo — revisa el detalle de arriba antes de lanzar al agente" ;;
+esac
 
 # Declarado (repositories.json) vs realidad (auditoría de ahora mismo) — hace
 # visible la deuda de flip de flags sin automatizar la decisión (el "sostenido"
 # del criterio de flip es juicio humano).
 DECLARED_HARNESS=$(echo "$PROJECT_JSON" | jq -r '.harness_ready')
 DECLARED_GRAPH=$(echo "$PROJECT_JSON" | jq -r '.graph_ready // false')
-AUDIT_RESULT_TXT=$([ "$AUDIT_OK" -eq 1 ] && echo "0 CRITICAL" || echo "CRITICAL en rojo")
+case "$RC_AUDIT" in
+  0) AUDIT_RESULT_TXT="0 CRITICAL, todo medido" ;;
+  2) AUDIT_RESULT_TXT="0 CRITICAL, pero con checks no medibles" ;;
+  *) AUDIT_RESULT_TXT="CRITICAL en rojo" ;;
+esac
 echo "   repositories.json declara: harness_ready=$DECLARED_HARNESS, graph_ready=$DECLARED_GRAPH | auditoría de hoy: $AUDIT_RESULT_TXT"
 if [ "$DECLARED_HARNESS" = "false" ] && [ "$AUDIT_OK" -eq 1 ]; then
   echo "   💡 La auditoría está en verde: si se sostiene varias rondas, considera flipar harness_ready=true en repositories.json."
@@ -281,7 +306,11 @@ ALLOWED_TOOLS='Edit,Write,Bash(git status:*),Bash(git diff:*),Bash(git log:*),Ba
 
 echo ""
 if [ "$AUDIT_OK" -ne 1 ]; then
-  echo "🔴 No se ofrece arranque automático porque el arnés tiene CRITICAL en rojo — revisa el detalle de arriba."
+  if [ "$RC_AUDIT" -eq 2 ]; then
+    echo "❔ No se ofrece arranque automático porque hay checks del arnés que NO se pudieron medir — no medir no es verde."
+  else
+    echo "🔴 No se ofrece arranque automático porque el arnés tiene CRITICAL en rojo — revisa el detalle de arriba."
+  fi
   echo "Si quieres lanzarlo igualmente, entra en la carpeta y ejecuta:"
   echo "   cd $WORK_DIR"
   echo "Y ejecuta:"
@@ -318,8 +347,18 @@ else
   echo "⚠️  systemd-run --user no disponible — el worker arranca sin límites de CPU/RAM propios."
 fi
 
-if [ -t 1 ] && [ -t 0 ]; then
-  exec "${RUN_WRAP[@]}" claude "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
+# El array vacío se guarda explícitamente: con el bash 3.2 de macOS y `set -u`,
+# expandir "${RUN_WRAP[@]}" de un array VACÍO aborta con "unbound variable" —
+# y en macOS systemd-run no existe, así que RUN_WRAP SIEMPRE está vacío y el
+# script moría justo en su última instrucción, tras haberlo hecho todo.
+if [ "${#RUN_WRAP[@]}" -gt 0 ]; then
+  if [ -t 1 ] && [ -t 0 ]; then
+    exec "${RUN_WRAP[@]}" claude "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
+  else
+    exec "${RUN_WRAP[@]}" claude -p "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
+  fi
+elif [ -t 1 ] && [ -t 0 ]; then
+  exec claude "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
 else
-  exec "${RUN_WRAP[@]}" claude -p "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
+  exec claude -p "$(cat "$RENDERED")" --allowedTools "$ALLOWED_TOOLS" --permission-mode bypassPermissions
 fi

@@ -11,35 +11,82 @@
 # la tabla tarea→herramienta, y lo devuelve como additionalContext. Solo
 # mide, no decide: si algo no se puede medir se dice, nunca se da por bueno.
 #
-# Nunca falla duro: un hook roto no puede impedir trabajar.
+# Nunca falla duro: un hook roto no puede impedir trabajar. Pero "no fallar
+# duro" NO es lo mismo que callarse: si este script no puede generar el
+# brief, emite un JSON válido que lo DICE, en vez de un {} que deja a la
+# sesión sin estado y sin saber que le falta.
 set -uo pipefail
 
 MATRIX_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-WORKSPACES="$MATRIX_ROOT/workspaces"
 
-# Los 6 repos de código de la flota (repositories.json). "status" (Upptime)
-# queda fuera: sin código propio, fuera de alcance del arnés.
+# Raíz de DATOS (workspaces/, .env), distinta de la raíz de CÓDIGO/config.
+# Un git worktree secundario no tiene workspaces/ ni .env (gitignorados, no
+# viajan), así que anclar los datos en $0 hacía que este brief afirmara en
+# positivo que los 6 repos NO están clonados y que los 4 tokens están
+# VACÍOS, siendo ambas cosas falsas. `git worktree list --porcelain` lista
+# SIEMPRE el worktree principal el primero y en ruta absoluta. Sin git, fuera
+# de un repo, o si el candidato no valida, se queda en MATRIX_ROOT.
+FLEET_ROOT="$MATRIX_ROOT"
+if command -v git >/dev/null 2>&1; then
+  _main_wt="$( { git -C "$MATRIX_ROOT" worktree list --porcelain 2>/dev/null || true; } \
+               | sed -n '1s/^worktree //p' )"
+  if [ -n "$_main_wt" ] && [ -d "$_main_wt" ] && [ -f "$_main_wt/repositories.json" ]; then
+    FLEET_ROOT="$_main_wt"
+  fi
+  unset _main_wt
+fi
+
+WORKSPACES="$FLEET_ROOT/workspaces"
+
+# Los repos de código salen de repositories.json (la "Verdad Absoluta" según
+# CLAUDE.md), no de una lista escrita a mano: un repo nuevo declarado en el
+# manifiesto tiene que aparecer aquí solo. Son los que declaran un servidor
+# graphify-*; "status" (Upptime) no tiene código propio y queda fuera.
+repos_de_codigo() {
+  command -v jq >/dev/null 2>&1 || return 1
+  jq -r '.projects[]
+         | select((.mcp_servers // []) | map(select(startswith("graphify"))) | length > 0)
+         | .name' "$MATRIX_ROOT/repositories.json" 2>/dev/null
+}
+
 estado_de_los_grafos() {
-  local repo ruta head sello desfase codigo
-  for repo in api-search-neuroon app-search-neuroon app-search-widget-neuroon \
-              docs-search-widget-neuroon wordpress-plugin-neuroon-search api-search-engine; do
+  local repo ruta head sello desfase codigo lista
+  lista="$(repos_de_codigo)"
+  if [ -z "$lista" ]; then
+    echo "  - INCÓGNITA: no se pudo leer la lista de repos de $MATRIX_ROOT/repositories.json (¿falta jq?) — el estado de los grafos es DESCONOCIDO, no vacío"
+    return
+  fi
+  for repo in $lista; do
     ruta="$WORKSPACES/$repo"
-    if [ ! -d "$ruta/.git" ]; then
-      echo "  - $repo: NO CLONADO (corre ./sync-fleet.sh)"
+    if [ ! -e "$ruta/.git" ]; then
+      echo "  - $repo: NO CLONADO en $ruta (corre ./sync-fleet.sh)"
       continue
     fi
     head="$(git -C "$ruta" rev-parse HEAD 2>/dev/null || echo "")"
     sello="$(cat "$WORKSPACES/.graphify-data/$repo/graphify-out/.built-at-commit" 2>/dev/null || echo "")"
     if [ -z "$head" ]; then
       echo "  - $repo: HEAD ilegible — INCÓGNITA, no asumas nada"
+    elif [ ! -f "$WORKSPACES/.graphify-data/$repo/graphify-out/graph.json" ]; then
+      # El sello por sí solo no basta: si el graph.json no está, comparar
+      # sellos diría "al día" de un grafo que no existe. Y graphify-mcp
+      # arranca igual sin él y devuelve el error con isError=false (medido),
+      # así que nada más lo delataría. Misma guarda que guard-graph-fresh.sh.
+      echo "  - $repo: HEAD ${head:0:7} · el grafo NO EXISTE (solo está el sello) -> ./tools/sync-graph.sh workspaces/$repo"
     elif [ -z "$sello" ]; then
       echo "  - $repo: HEAD ${head:0:7} · grafo SIN CONSTRUIR -> ./tools/sync-graph.sh workspaces/$repo"
     elif [ "$sello" = "$head" ]; then
       echo "  - $repo: HEAD ${head:0:7} · grafo al día"
+    elif ! git -C "$ruta" cat-file -e "${sello}^{commit}" 2>/dev/null; then
+      # Sello huérfano (rebase/force, o el centinela "sin-git" de una versión
+      # vieja de sync-graph.sh). Sin este caso, el `git diff` de abajo falla,
+      # `wc -l` cuenta 0, y un grafo IMPOSIBLE de comparar se anunciaba como
+      # "sirve igual". No medir no es verde.
+      echo "  - $repo: HEAD ${head:0:7} · el sello ${sello:0:7} NO existe en este clon (rebase/force) — INCÓGNITA, no se puede medir la frescura -> ./tools/sync-graph.sh workspaces/$repo"
     else
       desfase="$(git -C "$ruta" rev-list --count "$sello".."$head" 2>/dev/null || echo "?")"
-      codigo="$(git -C "$ruta" diff --name-only "$sello" "$head" -- '*.java' '*.py' '*.php' '*.ts' '*.tsx' '*.js' '*.jsx' 2>/dev/null | wc -l | tr -d ' ')"
-      if [ "${codigo:-0}" -gt 0 ]; then
+      if ! codigo="$(git -C "$ruta" diff --name-only "$sello" "$head" -- '*.java' '*.py' '*.php' '*.ts' '*.tsx' '*.js' '*.jsx' 2>/dev/null | wc -l | tr -d ' ')"; then
+        echo "  - $repo: HEAD ${head:0:7} · no se pudo comparar contra el sello ${sello:0:7} — INCÓGNITA, no verde -> ./tools/sync-graph.sh workspaces/$repo"
+      elif [ "${codigo:-0}" -gt 0 ]; then
         echo "  - $repo: HEAD ${head:0:7} · grafo ${sello:0:7}, $desfase commit(s) y $codigo fichero(s) de código por detrás -> RECONSTRUIR antes de fiarte"
       else
         echo "  - $repo: HEAD ${head:0:7} · grafo ${sello:0:7}, $desfase commit(s) por detrás pero SIN cambios de código: sirve igual"
@@ -49,9 +96,17 @@ estado_de_los_grafos() {
 }
 
 # MCPs de infraestructura (.mcp.json + .env). Solo se mide PRESENCIA del
-# token en el entorno — su valor no se imprime jamás.
+# token en el entorno — su valor no se imprime jamás, solo su longitud.
 estado_de_la_infra() {
-  local nombre server var
+  local nombre server var largo cuenta ENV_FILE
+  if ! command -v jq >/dev/null 2>&1 || ! jq -e . "$MATRIX_ROOT/.mcp.json" >/dev/null 2>&1; then
+    echo "  - INCÓGNITA: no se pudo leer $MATRIX_ROOT/.mcp.json (¿falta jq o el JSON está roto?) — el estado de los MCP de infra es DESCONOCIDO, no vacío"
+    return
+  fi
+  # El .env vive con los datos, no con el código: .mcp.json lo carga por ruta
+  # absoluta, así que medir el del worktree diría "vacío" de tokens que sí
+  # están puestos.
+  ENV_FILE="$FLEET_ROOT/.env"
   for entrada in "coolify:COOLIFY_MCP_TOKEN:Coolify oficial (read; exige instancia >=4.1 + toggle MCP)" \
                  "coolify-ops:COOLIFY_ACCESS_TOKEN:Coolify ops StuMason (restart/deploy/logs)" \
                  "hetzner:HETZNER_API_TOKEN:Hetzner Cloud lazyants (snapshot/reboot/firewall)" \
@@ -59,10 +114,16 @@ estado_de_la_infra() {
     server="${entrada%%:*}"
     var="$(echo "$entrada" | cut -d: -f2)"
     nombre="${entrada#*:*:}"
-    largo="$(awk -F= -v k="$var" 'index($0, k"=") == 1 {v=substr($0, length(k)+2); gsub(/^['"'"'"]|['"'"'"]$/, "", v); print length(v); exit}' "$MATRIX_ROOT/.env" 2>/dev/null)"
     if ! jq -e ".mcpServers.\"$server\"" "$MATRIX_ROOT/.mcp.json" >/dev/null 2>&1; then
       echo "  - $server: NO declarado en .mcp.json — $nombre"
-    elif [ "${largo:-0}" -gt 0 ]; then
+      continue
+    fi
+    if [ ! -f "$ENV_FILE" ]; then
+      echo "  - $server: declarado, pero no encuentro $ENV_FILE — INCÓGNITA: no se puede saber si $var tiene valor (NO asumas que está vacío)"
+      continue
+    fi
+    largo="$(awk -F= -v k="$var" 'index($0, k"=") == 1 {v=substr($0, length(k)+2); gsub(/^['"'"'"]|['"'"'"]$/, "", v); print length(v); exit}' "$ENV_FILE" 2>/dev/null)"
+    if [ "${largo:-0}" -gt 0 ]; then
       echo "  - $server: declarado y $var relleno en .env — $nombre"
     else
       echo "  - $server: declarado pero $var VACÍO en .env — no levantará; rellena .env (ver .env.example) y reinicia"
@@ -75,11 +136,23 @@ estado_de_la_infra() {
     else
       echo "  - gcloud: declarado pero SIN cuenta gcloud activa — corre 'gcloud auth login' y reinicia"
     fi
+  else
+    echo "  - gcloud: NO declarado en .mcp.json"
   fi
 }
 
+# Los servidores declarados se MIDEN leyendo .mcp.json. Antes había aquí un
+# párrafo fechado a mano ("Estado real de los MCP (2026-08-07)") en medio de
+# un brief que se define a sí mismo como "solo mide, no decide": justo la
+# clase de dato que CLAUDE.md ordena medir y no redactar.
+SERVIDORES="$(jq -r '.mcpServers | keys | join(", ")' "$MATRIX_ROOT/.mcp.json" 2>/dev/null || true)"
+[ -n "$SERVIDORES" ] || SERVIDORES="INCÓGNITA: no se pudo leer $MATRIX_ROOT/.mcp.json"
+
 BRIEF="$(cat <<EOF
 # Estado de la flota Neuroon (medido por tools/session-brief.sh)
+
+Raíz de datos medida (workspaces/, .env): $FLEET_ROOT
+Raíz de código/config (scripts, .mcp.json): $MATRIX_ROOT
 
 $(estado_de_los_grafos)
 
@@ -112,14 +185,12 @@ ningún MCP llega, y siempre contándoselo al humano primero.
 **Sufijo por repo**: \`-api\` = api-search-neuroon · \`-app\` = app-search-neuroon ·
 \`-widget\` = app-search-widget-neuroon · \`-docs\` = docs-search-widget-neuroon ·
 \`-wp\` = wordpress-plugin-neuroon-search · \`-engine\` = api-search-engine.
+Además, \`serena\` a secas apunta al código de la propia Matriz.
 
-**Estado real de los MCP (2026-08-07)**: \`graphify-<sufijo>\` y \`serena-<sufijo>\`
-están declarados en \`.mcp.json\` para los 6 repos de código, más \`serena\` a
-secas para la propia Matriz. \`./sync-fleet.sh\` mantiene esto — da de alta el
-proyecto de serena de cada repo y refresca su grafo si ya estaba declarado en
-\`mcp_servers\`.
+**Servidores declarados ahora mismo en \`.mcp.json\`** (medido, no redactado):
+$SERVIDORES
 
-**Si no ves un servidor que esta tabla nombra**, tu sesión es anterior a su
+**Si no ves un servidor que esta lista nombra**, tu sesión es anterior a su
 alta: los MCP se fijan al arrancar y no se aplican en caliente. Compruébalo
 con ToolSearch antes de concluir que está roto, y si falta, reinicia la
 sesión en vez de buscarte la vida con bash.
@@ -139,7 +210,11 @@ api-search-neuroon, no siempre se ve en el grafo). Para eso, grep o
 EOF
 )"
 
+# Si el encoder falla (falta python3, etc.) NO se emite {}: eso dejaba a la
+# sesión sin estado de flota y sin ningún aviso, y la ausencia de avisos se
+# lee como "todo bien". "Un hook roto no puede impedir trabajar" se cumple
+# con cualquier JSON válido; no obliga a callar.
 printf '%s' "$BRIEF" | python3 -c '
 import json,sys
 print(json.dumps({"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":sys.stdin.read()}}))
-' 2>/dev/null || echo '{}'
+' 2>/dev/null || printf '%s\n' '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"session-brief.sh no pudo generar el brief (falta python3 o fallo del encoder). El estado de la flota es DESCONOCIDO en esta sesion: no asumas que los grafos estan al dia ni que los MCP estan arriba, y no des por buena ninguna afirmacion sobre la flota sin medirla tu. Arregla el arnes antes de fiarte de nada."}}'

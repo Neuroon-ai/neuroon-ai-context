@@ -236,7 +236,9 @@ MAX_WORKERS="${GRADLE_MAX_WORKERS:-$(( NPROC / 2 > 2 ? NPROC / 2 : 2 ))}"
   || { echo "❌ Falla de compilación — repara esto ANTES de añadir alcance nuevo."; exit 1; }
 
 if [ -f "feature_list.json" ] && command -v jq >/dev/null 2>&1; then
-  WIP=$(jq '[ (if type=="array" then . else .features end)[] | select(.status=="in_progress") ] | length' feature_list.json 2>/dev/null || echo 0)
+  if ! WIP=$(jq '[ (if type=="array" then . else .features end)[] | select(.status=="in_progress") ] | length' feature_list.json 2>/dev/null); then
+    echo "❔ No se pudo leer feature_list.json (¿JSON roto?) — incógnita, no verde"; exit 2
+  fi
   if [ "${WIP:-0}" -gt 1 ]; then
     echo "❌ WIP=$WIP en feature_list.json (máximo 1 in_progress)"; exit 1
   fi
@@ -259,7 +261,9 @@ command -v "$MVN" >/dev/null 2>&1 || [ -x "$MVN" ] || { echo "❌ No hay mvnw ni
   || { echo "❌ Falla de compilación — repara esto ANTES de añadir alcance nuevo."; exit 1; }
 
 if [ -f "feature_list.json" ] && command -v jq >/dev/null 2>&1; then
-  WIP=$(jq '[ (if type=="array" then . else .features end)[] | select(.status=="in_progress") ] | length' feature_list.json 2>/dev/null || echo 0)
+  if ! WIP=$(jq '[ (if type=="array" then . else .features end)[] | select(.status=="in_progress") ] | length' feature_list.json 2>/dev/null); then
+    echo "❔ No se pudo leer feature_list.json (¿JSON roto?) — incógnita, no verde"; exit 2
+  fi
   if [ "${WIP:-0}" -gt 1 ]; then
     echo "❌ WIP=$WIP en feature_list.json (máximo 1 in_progress)"; exit 1
   fi
@@ -289,7 +293,9 @@ npm run lint --if-present
 npm run typecheck --if-present
 
 if [ -f "feature_list.json" ] && command -v jq >/dev/null 2>&1; then
-  WIP=$(jq '[ (if type=="array" then . else .features end)[] | select(.status=="in_progress") ] | length' feature_list.json 2>/dev/null || echo 0)
+  if ! WIP=$(jq '[ (if type=="array" then . else .features end)[] | select(.status=="in_progress") ] | length' feature_list.json 2>/dev/null); then
+    echo "❔ No se pudo leer feature_list.json (¿JSON roto?) — incógnita, no verde"; exit 2
+  fi
   if [ "${WIP:-0}" -gt 1 ]; then
     echo "❌ WIP=$WIP en feature_list.json (máximo 1 in_progress)"; exit 1
   fi
@@ -311,7 +317,9 @@ if [ -f "requirements.txt" ] && [ ! -d ".venv" ]; then
 fi
 
 if [ -f "feature_list.json" ] && command -v jq >/dev/null 2>&1; then
-  WIP=$(jq '[ (if type=="array" then . else .features end)[] | select(.status=="in_progress") ] | length' feature_list.json 2>/dev/null || echo 0)
+  if ! WIP=$(jq '[ (if type=="array" then . else .features end)[] | select(.status=="in_progress") ] | length' feature_list.json 2>/dev/null); then
+    echo "❔ No se pudo leer feature_list.json (¿JSON roto?) — incógnita, no verde"; exit 2
+  fi
   if [ "${WIP:-0}" -gt 1 ]; then
     echo "❌ WIP=$WIP en feature_list.json (máximo 1 in_progress)"; exit 1
   fi

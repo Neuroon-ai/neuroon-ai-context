@@ -70,6 +70,22 @@ echo "=== 🏭 Provisionando Máquina Matriz (Neuroon Factory) ==="
 # (ruta absoluta, symlink, cron...) — mismo patrón que MATRIX_ROOT en deploy-worker.sh.
 MATRIX_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
+# Raíz de DATOS/estado de máquina (workspaces/, .env, .serena/), distinta de
+# la raíz de CÓDIGO. Importa para ensure_serena_matriz_project: .serena/ está
+# gitignorado y nunca viaja a un git worktree secundario, así que ejecutado
+# desde uno se daría de alta el proyecto "neuroon-ai-context" apuntando a un
+# árbol efímero que desaparece al borrar el worktree — y .mcp.json pide ese
+# proyecto POR NOMBRE.
+FLEET_ROOT="$MATRIX_ROOT"
+if command -v git >/dev/null 2>&1; then
+  _main_wt="$( { git -C "$MATRIX_ROOT" worktree list --porcelain 2>/dev/null || true; } \
+               | sed -n '1s/^worktree //p' )"
+  if [ -n "$_main_wt" ] && [ -d "$_main_wt" ] && [ -f "$_main_wt/repositories.json" ]; then
+    FLEET_ROOT="$_main_wt"
+  fi
+  unset _main_wt
+fi
+
 # --- PATH local ---
 mkdir -p "$HOME/.local/bin"
 export PATH="$HOME/.local/bin:$HOME/.hermes/bin:$PATH"
@@ -433,12 +449,14 @@ ensure_serena_matriz_project() {
         warn "No hay .mcp.json en $MATRIX_ROOT: no doy de alta su proyecto de serena."
         return 0
     fi
-    if [ -f "$MATRIX_ROOT/.serena/project.yml" ]; then
+    # FLEET_ROOT y no MATRIX_ROOT: el proyecto de serena de la Matriz tiene
+    # que apuntar al worktree PRINCIPAL, no a uno secundario y efímero.
+    if [ -f "$FLEET_ROOT/.serena/project.yml" ]; then
         ok "serena ya tiene proyecto declarado para la Matriz."
         return 0
     fi
-    info "Dando de alta la Matriz como proyecto de serena (lenguaje: bash)..."
-    (cd "$MATRIX_ROOT" && serena project create --name neuroon-ai-context --language bash .) > /dev/null || {
+    info "Dando de alta la Matriz como proyecto de serena (lenguaje: bash) en $FLEET_ROOT..."
+    (cd "$FLEET_ROOT" && serena project create --name neuroon-ai-context --language bash .) > /dev/null || {
         warn "No se pudo dar de alta el proyecto de serena de la Matriz."; return 1; }
     ok "Matriz dada de alta como proyecto de serena."
 }
@@ -681,7 +699,7 @@ HOOK_EOF
 check_readonly_runtimes() {
     command -v python3 &> /dev/null || warn "python3 no está instalado. Requerido para api-search-engine."
     command -v java &> /dev/null   || warn "java (JDK) no está instalado. Requerido para el backend Java (api-search-neuroon, usa Maven/mvnw)."
-    command -v docker &> /dev/null || warn "docker no está instalado. Requerido para MCP Qdrant/BBDD."
+    command -v docker &> /dev/null || warn "docker no está instalado. Requerido para levantar las dependencias locales de los repos de la flota (BBDD, etc.)."
 }
 
 # === Orquestación ===

@@ -22,10 +22,10 @@
 # Tampoco toca lo que grep hace mejor: contar ocurrencias y buscar texto
 # literal, ni nada fuera de workspaces/.
 #
-# ESTADO ACTUAL DE LA FLOTA (2026-08-07): serena-<sufijo> ya está declarado en
-# .mcp.json para los 6 repos de código (ver tools/sync-fleet.sh, que da de
-# alta el proyecto de serena de cada uno). El aviso de abajo ya apunta a una
-# herramienta real.
+# serena-<sufijo> está declarado en .mcp.json para los 6 repos de código (ver
+# ./sync-fleet.sh, en la raíz de la Matriz, que da de alta el proyecto de
+# serena de cada uno). El aviso de abajo apunta por tanto a una herramienta
+# que existe.
 set -uo pipefail
 
 permitir() {
@@ -120,7 +120,7 @@ case "$VEREDICTO" in
     REGISTRO="$HOME/.claude/audit/symbol-search-misses.log"
     mkdir -p "$(dirname "$REGISTRO")" 2>/dev/null
     printf '%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$REPO" >> "$REGISTRO" 2>/dev/null
-    avisar "Eso es localizar la declaración de un símbolo, y para eso está serena, que lee el árbol sintáctico en vez de adivinar por texto: usa mcp__serena-${REPO}__find_symbol (o find_referencing_symbols si lo que quieres es ver sus usos antes de tocarlo). Están diferidas: cárgalas con ToolSearch 'select:mcp__serena-${REPO}__find_symbol,mcp__serena-${REPO}__find_referencing_symbols'. El comando SE EJECUTA igual, esto no te bloquea: es un aviso de enrutado, y queda anotado para poder medir cuántas veces se elige el camino peor. Si serena todavía no está declarado para este repo en .mcp.json, este aviso es un recordatorio de que falta añadirlo — no de que exista ya. Si lo tuyo era contar o buscar texto literal, grep era lo correcto y este aviso sobra."
+    avisar "Eso es localizar la declaración de un símbolo, y para eso está serena, que lee el árbol sintáctico en vez de adivinar por texto: usa mcp__serena-${REPO}__find_symbol (o find_referencing_symbols si lo que quieres es ver sus usos antes de tocarlo). Están diferidas: cárgalas con ToolSearch 'select:mcp__serena-${REPO}__find_symbol,mcp__serena-${REPO}__find_referencing_symbols'. El comando SE EJECUTA igual, esto no te bloquea: es un aviso de enrutado, y queda anotado en ~/.claude/audit/symbol-search-misses.log, que tools/audit-harness.sh agrega en su check S7. Si lo tuyo era contar o buscar texto literal, grep era lo correcto y este aviso sobra."
     ;;
   *) permitir ;;
 esac

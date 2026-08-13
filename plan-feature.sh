@@ -12,6 +12,21 @@ fi
 
 REPO_NAME=$1
 MATRIX_ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+# Raíz de DATOS (workspaces/), distinta de la raíz de CÓDIGO. Sin esto, desde
+# un git worktree secundario este script afirmaba que el repo "no está
+# sincronizado todavía" (falso) y mandaba correr ./sync-fleet.sh, que en ese
+# contexto duplicaba la flota entera dentro del worktree.
+FLEET_ROOT="$MATRIX_ROOT"
+if command -v git >/dev/null 2>&1; then
+  _main_wt="$( { git -C "$MATRIX_ROOT" worktree list --porcelain 2>/dev/null || true; } \
+               | sed -n '1s/^worktree //p' )"
+  if [ -n "$_main_wt" ] && [ -d "$_main_wt" ] && [ -f "$_main_wt/repositories.json" ]; then
+    FLEET_ROOT="$_main_wt"
+  fi
+  unset _main_wt
+fi
+
 MANIFEST="$MATRIX_ROOT/repositories.json"
 
 # base_path viene de repositories.json (misma fuente que sync-fleet.sh y
@@ -28,12 +43,14 @@ else
 fi
 case "$BASE_PATH_EXPANDED" in
     /*) WORKSPACES_DIR="$BASE_PATH_EXPANDED" ;;
-    *) WORKSPACES_DIR="$MATRIX_ROOT/${BASE_PATH_EXPANDED#./}" ;;
+    *) WORKSPACES_DIR="$FLEET_ROOT/${BASE_PATH_EXPANDED#./}" ;;
 esac
 WORK_DIR="$WORKSPACES_DIR/$REPO_NAME"
 
 if [ ! -d "$WORK_DIR" ]; then
-    echo "❌ El repositorio $REPO_NAME no está sincronizado todavía."
+    # La ruta buscada se imprime: un "no está" auditable vale mucho más que
+    # una conclusión, sobre todo cuando la causa puede ser la raíz mal resuelta.
+    echo "❌ No encuentro el repositorio $REPO_NAME en: $WORK_DIR"
     echo "   Ejecuta primero: ./sync-fleet.sh"
     exit 1
 fi
