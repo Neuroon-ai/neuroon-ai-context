@@ -68,7 +68,7 @@ fi
 [ -n "$TOOL" ] || denegar "guard-graph-fresh no pudo leer el nombre de la tool del payload del hook, asi que no puede comprobar la frescura del grafo. No medir no es verde: arregla el arnes o reconstruye con ./tools/sync-graph.sh."
 
 # Sufijo → repo, mismo mapeo que tools/guard-symbol-search.sh y
-# tools/session-brief.sh. Los 6 servidores graphify-* están declarados en
+# tools/session-brief.sh. Los 7 servidores graphify-* están declarados en
 # .mcp.json (ver repositories.json → mcp_servers); "status" (Upptime) queda
 # fuera por no tener código propio.
 case "$TOOL" in
@@ -78,6 +78,7 @@ case "$TOOL" in
   mcp__graphify-docs__*)   REPO="docs-search-widget-neuroon" ;;
   mcp__graphify-wp__*)     REPO="wordpress-plugin-neuroon-search" ;;
   mcp__graphify-engine__*) REPO="api-search-engine" ;;
+  mcp__graphify-cdp__*)    REPO="neuroon-customer-api" ;;
   # Un graphify-* que este case no conozca es un repo nuevo sin vigilancia:
   # antes caía en el default y su grafo quedaba fuera de la puerta sin que
   # nada lo dijera.
@@ -110,10 +111,11 @@ SELLO="$(cat "$SELLO_FILE" 2>/dev/null || echo "")"
 git -C "$RUTA" cat-file -e "${SELLO}^{commit}" 2>/dev/null || \
   denegar "El grafo de $REPO se construyo sobre el commit ${SELLO:0:7}, que ya no existe en este clon (rebase o fuerza). Reconstruyelo: ./tools/sync-graph.sh workspaces/$REPO"
 
-# Extensiones de código de esta flota: Java (api-search-neuroon), Python
-# (api-search-engine), PHP (wordpress-plugin-neuroon-search) y TS/JS (los
-# tres frontends: app-search-neuroon, app-search-widget-neuroon,
-# docs-search-widget-neuroon). Ningún repo usa Kotlin.
+# Extensiones de código de esta flota: Java (api-search-neuroon,
+# neuroon-customer-api), Python (api-search-engine), PHP
+# (wordpress-plugin-neuroon-search) y TS/JS (los tres frontends:
+# app-search-neuroon, app-search-widget-neuroon, docs-search-widget-neuroon).
+# Ningún repo usa Kotlin.
 #
 # El rc del pipeline SÍ se comprueba: `git diff | wc -l` devuelve 0 cuando el
 # diff falla, y 0 significaba "sin cambios de código" -> permitir. Un fallo

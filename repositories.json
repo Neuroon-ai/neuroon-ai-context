@@ -104,6 +104,21 @@
         "graphify-engine",
         "serena-engine"
       ]
+    },
+    {
+      "name": "neuroon-customer-api",
+      "type": "backend",
+      "framework": "spring-boot",
+      "default_branch": "develop",
+      "agent_enabled": true,
+      "harness_ready": false,
+      "harness_notes": "CDP de Neuroon (E1 del roadmap CRM/CDP, ticket Neuroon-ai/api-search-neuroon#356). Hereda las leyes del monolito (CLAUDE.md + docs/ENGINEERING_RULES.md de api-search-neuroon). Mide con ./tools/audit-harness.sh workspaces/neuroon-customer-api. Pendiente de sostener el verde varias rondas antes de pasar a true.",
+      "graph_ready": false,
+      "graph_notes": "Grafo en workspaces/.graphify-data/neuroon-customer-api/ (cifras y sello en .graph-stats). Repo recién nacido: el grafo será pequeño hasta que entre código — eso lo dice .graph-stats, no esta nota.",
+      "mcp_servers": [
+        "graphify-cdp",
+        "serena-cdp"
+      ]
     }
   ]
 }

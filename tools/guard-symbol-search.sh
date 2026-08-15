@@ -22,7 +22,7 @@
 # Tampoco toca lo que grep hace mejor: contar ocurrencias y buscar texto
 # literal, ni nada fuera de workspaces/.
 #
-# serena-<sufijo> está declarado en .mcp.json para los 6 repos de código (ver
+# serena-<sufijo> está declarado en .mcp.json para los 7 repos de código (ver
 # ./sync-fleet.sh, en la raíz de la Matriz, que da de alta el proyecto de
 # serena de cada uno). El aviso de abajo apunta por tanto a una herramienta
 # que existe.
@@ -72,12 +72,13 @@ if not re.search(r"(?:^|[|;&(\s])(?:rtk\s+)?(?:grep|rg|ugrep|find)\b", cmd):
 if re.search(r"grep[^|]*\s-\w*c\w*\b|\|\s*wc\b|--count", cmd):
     print("allow"); raise SystemExit
 
-# Los 6 repos de código de la flota (repositories.json) — "status" queda
+# Los 7 repos de código de la flota (repositories.json) — "status" queda
 # fuera: es infraestructura Upptime sin código propio, fuera de alcance del
 # arnés (ver harness_notes de "status" en repositories.json).
 if not re.search(
     r"workspaces/(api-search-neuroon|app-search-neuroon|app-search-widget-neuroon"
-    r"|docs-search-widget-neuroon|wordpress-plugin-neuroon-search|api-search-engine)"
+    r"|docs-search-widget-neuroon|wordpress-plugin-neuroon-search|api-search-engine"
+    r"|neuroon-customer-api)"
     r"|(?:^|\s)src/(main|test)/",
     cmd,
 ):
@@ -97,6 +98,8 @@ elif "wordpress-plugin-neuroon-search" in cmd:
     repo = "wp"
 elif "api-search-engine" in cmd:
     repo = "engine"
+elif "neuroon-customer-api" in cmd:
+    repo = "cdp"
 
 # class/interface/enum: Java, TS/JS. function/type: TS/JS, PHP. Sin "fun
 # interface"/"object" (Kotlin-only, no hay Kotlin en esta flota).
