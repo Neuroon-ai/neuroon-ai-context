@@ -66,14 +66,19 @@ estado_de_los_grafos() {
     sello="$(cat "$WORKSPACES/.graphify-data/$repo/graphify-out/.built-at-commit" 2>/dev/null || echo "")"
     if [ -z "$head" ]; then
       echo "  - $repo: HEAD ilegible — INCÓGNITA, no asumas nada"
+    elif [ -z "$sello" ]; then
+      # Sin sello no hay nada que comparar, haya o no graph.json: se pide
+      # construir. Este caso va ANTES que el de "solo está el sello" porque un
+      # repo recién nacido (sin código indexable todavía) no tiene ni sello ni
+      # grafo, y antes se anunciaba "solo está el sello" de un sello que no
+      # existía.
+      echo "  - $repo: HEAD ${head:0:7} · grafo SIN CONSTRUIR -> ./tools/sync-graph.sh workspaces/$repo"
     elif [ ! -f "$WORKSPACES/.graphify-data/$repo/graphify-out/graph.json" ]; then
       # El sello por sí solo no basta: si el graph.json no está, comparar
       # sellos diría "al día" de un grafo que no existe. Y graphify-mcp
       # arranca igual sin él y devuelve el error con isError=false (medido),
       # así que nada más lo delataría. Misma guarda que guard-graph-fresh.sh.
       echo "  - $repo: HEAD ${head:0:7} · el grafo NO EXISTE (solo está el sello) -> ./tools/sync-graph.sh workspaces/$repo"
-    elif [ -z "$sello" ]; then
-      echo "  - $repo: HEAD ${head:0:7} · grafo SIN CONSTRUIR -> ./tools/sync-graph.sh workspaces/$repo"
     elif [ "$sello" = "$head" ]; then
       echo "  - $repo: HEAD ${head:0:7} · grafo al día"
     elif ! git -C "$ruta" cat-file -e "${sello}^{commit}" 2>/dev/null; then
@@ -169,7 +174,7 @@ Tienes MCPs que rinden mucho más que grep/bash para estas tareas. Úsalos:
 | Entender la forma de un repo que no conoces | \`mcp__graphify-<repo>__graph_stats\`, \`god_nodes\` | leer ficheros al azar |
 | Saber a qué afecta tocar un símbolo | \`mcp__graphify-<repo>__get_community\`, \`get_neighbors\` | grep a ciegas |
 | Localizar/renombrar un símbolo, CONTAR sus usos | \`mcp__serena-<repo>__find_symbol\`, \`find_referencing_symbols\`, \`rename_symbol\` (ver nota de abajo) | sed, edición a mano |
-| Verificar un cambio en api-search-neuroon | \`./mvnw verify\` dentro de workspaces/api-search-neuroon | dar por bueno que compila |
+| Verificar un cambio en api-search-neuroon o neuroon-customer-api | \`./mvnw verify\` dentro de workspaces/<repo> | dar por bueno que compila |
 | Verificar un cambio en un frontend (Next.js/Vite/Docusaurus) | \`npm run build\`/\`npm test\` dentro de ese repo | dar por bueno que compila |
 | Verificar api-search-engine (Python) | \`pytest\` dentro de workspaces/api-search-engine | dar por bueno que corre |
 | Buscar texto literal, contar ocurrencias | grep / rg | el grafo (subreporta, ver abajo) |
@@ -184,7 +189,8 @@ ningún MCP llega, y siempre contándoselo al humano primero.
 
 **Sufijo por repo**: \`-api\` = api-search-neuroon · \`-app\` = app-search-neuroon ·
 \`-widget\` = app-search-widget-neuroon · \`-docs\` = docs-search-widget-neuroon ·
-\`-wp\` = wordpress-plugin-neuroon-search · \`-engine\` = api-search-engine.
+\`-wp\` = wordpress-plugin-neuroon-search · \`-engine\` = api-search-engine ·
+\`-cdp\` = neuroon-customer-api (el CDP, Spring Boot como el monolito).
 Además, \`serena\` a secas apunta al código de la propia Matriz.
 
 **Servidores declarados ahora mismo en \`.mcp.json\`** (medido, no redactado):

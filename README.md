@@ -77,7 +77,7 @@ solo estorba.
   que "¿se está usando el MCP de verdad?" sea un número, no una impresión.
 
 `graphify-<sufijo>` y `serena-<sufijo>` están declarados en `.mcp.json` para
-los 6 repos de código de la flota (`status` queda fuera, sin código propio).
+los 7 repos de código de la flota (`status` queda fuera, sin código propio).
 `./sync-fleet.sh` los mantiene: da de alta el proyecto de serena de cada repo
 y refresca su grafo en cada pasada.
 

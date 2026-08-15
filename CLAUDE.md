@@ -21,7 +21,7 @@ Los proyectos que conforman la plataforma Neuroon están declarados como la "Ver
 
 ## Modelo operativo: una sesión, toda la flota + las tools por delante de bash
 
-Se trabaja con **una sola sesión Claude en esta raíz**, viendo todos los repos de `workspaces/` a la vez — no un worker por repo (`deploy-worker.sh` quedó en desuso el 2026-08-07, ver `README.md`). Por eso `.mcp.json` en esta raíz declara un servidor **por repo, con sufijo** (`api`, `app`, `widget`, `docs`, `wp`, `engine`), más un `serena` **sin sufijo** que apunta al código de la propia Matriz (los scripts de este repo):
+Se trabaja con **una sola sesión Claude en esta raíz**, viendo todos los repos de `workspaces/` a la vez — no un worker por repo (`deploy-worker.sh` quedó en desuso el 2026-08-07, ver `README.md`). Por eso `.mcp.json` en esta raíz declara un servidor **por repo, con sufijo** (`api`, `app`, `widget`, `docs`, `wp`, `engine`, `cdp`), más un `serena` **sin sufijo** que apunta al código de la propia Matriz (los scripts de este repo):
 
 - `mcp__graphify-<sufijo>__*` — forma del repo, comunidades, radio de impacto de un símbolo. Vive en una caché centralizada fuera de cada repo (`workspaces/.graphify-data/<repo>/`, `tools/sync-graph.sh`) para no ensuciar cada PR con el diff del grafo.
 - `mcp__serena-<sufijo>__*` — LSP real por lenguaje (`find_symbol`, `find_referencing_symbols`, `rename_symbol`): para localizar una declaración o ver sus usos, esto gana a grep porque lee el árbol sintáctico, no adivina por texto. **La primera llamada a un repo tarda** (arranque del language server — en `neuroon-audit-context` se mide ~100 s la primera vez, ~10-20 s después; no medido todavía en esta flota, pero es el mismo `serena` y el mismo mecanismo): no lo des por colgado. Sus `write_memory`/`read_memory` son memoria **por proyecto de serena**, un mecanismo distinto de Claude-Mem (ver más abajo) — no lo confundas con la memoria conversacional de la sesión.
@@ -75,6 +75,7 @@ Esta máquina Matriz instala `claude-mem` a nivel global (transversal a la sesi�
 ## Convenciones de la plataforma
 
 - Backend de búsqueda (`api-search-neuroon`): Java + Spring Boot, Maven (`mvnw`).
+- Backend del CDP (`neuroon-customer-api`, sufijo `cdp`): Java + Spring Boot, Maven (`mvnw`) — mismo stack y mismas leyes que el monolito (hereda su `CLAUDE.md` y `docs/ENGINEERING_RULES.md`); rama por defecto `develop`.
 - Backend del motor (`api-search-engine`): Python.
 - Frontends (`app-search-neuroon`, `app-search-widget-neuroon`, `docs-search-widget-neuroon`): TypeScript/Node.js (Next.js, Vite, Docusaurus).
 - Plugin (`wordpress-plugin-neuroon-search`): WordPress/PHP.
