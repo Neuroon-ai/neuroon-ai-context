@@ -49,6 +49,47 @@ repos_de_codigo() {
          | .name' "$MATRIX_ROOT/repositories.json" 2>/dev/null
 }
 
+# Dónde viven las decisiones ya cerradas. Existe porque el 2026-08-16 se
+# construyó media etapa del CDP proponiendo cosas que estos documentos YA
+# decidían (el BFF de E5 llama a los servicios del CRM, no al monolito; el
+# stack declara Spring Data JPA). No fue descuido de lectura: el roadmap y la
+# reconciliación viven en una rama SIN MERGEAR, así que no aparecían en ningún
+# árbol de trabajo. Un documento que decide y no está en la rama por defecto es
+# una decisión invisible, y por eso se miden las dos cosas por separado.
+decisiones_cerradas() {
+  local repo ruta rama doc encontrados sueltos
+  encontrados=""
+  sueltos=""
+  for repo in $(repos_de_codigo); do
+    ruta="$WORKSPACES/$repo"
+    [ -e "$ruta/.git" ] || continue
+    rama="$(git -C "$ruta" symbolic-ref --quiet --short HEAD 2>/dev/null || echo HEAD)"
+    for doc in $(git -C "$ruta" ls-tree -r --name-only HEAD 2>/dev/null \
+                 | grep -E '^docs/(adr|superpowers/specs)/.*\.md$' | head -12); do
+      encontrados="${encontrados}  - $repo [$rama]: $doc"$'\n'
+    done
+    # Ficheros AUSENTES de HEAD que existen en alguna rama remota. Con `git diff`
+    # salían también los que están en ambos lados y solo difieren: un aviso con
+    # falsos positivos se acaba ignorando, que es lo contrario de lo que esta
+    # sección busca. Se comparan las dos listas de nombres.
+    for doc in $(comm -13 \
+                   <(git -C "$ruta" ls-tree -r --name-only HEAD 2>/dev/null \
+                     | grep -E '^docs/(adr|superpowers/specs)/.*\.md$' | sort -u) \
+                   <(git -C "$ruta" for-each-ref --format='%(refname:short)' refs/remotes/origin 2>/dev/null \
+                     | while read -r ref; do
+                         git -C "$ruta" ls-tree -r --name-only "$ref" 2>/dev/null \
+                           | grep -E '^docs/(adr|superpowers/specs)/.*\.md$'
+                       done | sort -u) | head -8); do
+      sueltos="${sueltos}  - $repo: $doc — DECIDE algo y NO está en tu árbol (vive en una rama remota)"$'\n'
+    done
+  done
+  [ -n "$encontrados" ] && printf '%s' "$encontrados"
+  if [ -n "$sueltos" ]; then
+    printf '\n  DECISIONES QUE NO VES DESDE AQUÍ:\n%s' "$sueltos"
+  fi
+  [ -n "$encontrados$sueltos" ] || echo "  - INCÓGNITA: no se pudo listar ningún documento de decisiones"
+}
+
 estado_de_los_grafos() {
   local repo ruta head sello desfase codigo lista
   lista="$(repos_de_codigo)"
@@ -213,6 +254,15 @@ api-search-neuroon, no siempre se ve en el grafo). Para eso, grep o
 2. \`feature_list.json\` solo admite \`verified\` si TÚ ejecutaste la verificación y la viste pasar.
 3. "No pude medir" es una incógnita, nunca un verde.
 4. Ante ambigüedad de producto, pregunta al humano en vez de elegir por él.
+5. **Antes de proponer o implementar arquitectura, LEE las decisiones ya cerradas** de la lista de arriba —
+   enteras, no en diagonal, y las de las ramas remotas también. Proponer algo que un documento ya descartó
+   cuesta más que no proponer nada: se construye encima y deshacerlo sale caro. Si una decisión falta,
+   pregunta; si la vas a contradecir, dilo explícitamente y justifícalo. Esta regla se escribió el 2026-08-16,
+   después de tropezar tres veces seguidas con ella en la misma sesión.
+
+# Decisiones ya cerradas — dónde viven (medido, no redactado)
+
+$(decisiones_cerradas)
 EOF
 )"
 
