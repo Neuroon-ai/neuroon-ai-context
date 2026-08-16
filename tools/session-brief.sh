@@ -49,13 +49,10 @@ repos_de_codigo() {
          | .name' "$MATRIX_ROOT/repositories.json" 2>/dev/null
 }
 
-# Dónde viven las decisiones ya cerradas. Existe porque el 2026-08-16 se
-# construyó media etapa del CDP proponiendo cosas que estos documentos YA
-# decidían (el BFF de E5 llama a los servicios del CRM, no al monolito; el
-# stack declara Spring Data JPA). No fue descuido de lectura: el roadmap y la
-# reconciliación viven en una rama SIN MERGEAR, así que no aparecían en ningún
-# árbol de trabajo. Un documento que decide y no está en la rama por defecto es
-# una decisión invisible, y por eso se miden las dos cosas por separado.
+# Dónde viven las decisiones ya cerradas. Se miden DOS cosas por separado: las
+# que están en la rama por defecto y las que solo existen en una rama remota
+# sin mergear. Un documento que decide y no está en el árbol de trabajo es una
+# decisión invisible: no aparece por grep, y quien no la ve construye encima.
 decisiones_cerradas() {
   local repo ruta rama doc encontrados sueltos
   encontrados=""
@@ -257,8 +254,7 @@ api-search-neuroon, no siempre se ve en el grafo). Para eso, grep o
 5. **Antes de proponer o implementar arquitectura, LEE las decisiones ya cerradas** de la lista de arriba —
    enteras, no en diagonal, y las de las ramas remotas también. Proponer algo que un documento ya descartó
    cuesta más que no proponer nada: se construye encima y deshacerlo sale caro. Si una decisión falta,
-   pregunta; si la vas a contradecir, dilo explícitamente y justifícalo. Esta regla se escribió el 2026-08-16,
-   después de tropezar tres veces seguidas con ella en la misma sesión.
+   pregunta; si la vas a contradecir, dilo explícitamente y justifícalo.
 
 # Decisiones ya cerradas — dónde viven (medido, no redactado)
 
