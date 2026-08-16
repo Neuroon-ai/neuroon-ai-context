@@ -1,103 +1,224 @@
 {
   "mcpServers": {
-    "serena": {
-      "command": "serena",
-      "args": ["start-mcp-server", "--context", "claude-code",
-               "--project", "neuroon-ai-context",
-               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
-    },
-    "serena-api": {
-      "command": "serena",
-      "args": ["start-mcp-server", "--context", "claude-code",
-               "--project", "api-search-neuroon",
-               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
-    },
-    "serena-app": {
-      "command": "serena",
-      "args": ["start-mcp-server", "--context", "claude-code",
-               "--project", "app-search-neuroon",
-               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
-    },
-    "serena-widget": {
-      "command": "serena",
-      "args": ["start-mcp-server", "--context", "claude-code",
-               "--project", "app-search-widget-neuroon",
-               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
-    },
-    "serena-docs": {
-      "command": "serena",
-      "args": ["start-mcp-server", "--context", "claude-code",
-               "--project", "docs-search-widget-neuroon",
-               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
-    },
-    "serena-wp": {
-      "command": "serena",
-      "args": ["start-mcp-server", "--context", "claude-code",
-               "--project", "wordpress-plugin-neuroon-search",
-               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
-    },
-    "serena-engine": {
-      "command": "serena",
-      "args": ["start-mcp-server", "--context", "claude-code",
-               "--project", "api-search-engine",
-               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
-    },
-    "serena-cdp": {
-      "command": "serena",
-      "args": ["start-mcp-server", "--context", "claude-code",
-               "--project", "neuroon-customer-api",
-               "--enable-web-dashboard", "false", "--enable-gui-log-window", "false"]
-    },
-    "graphify-api": {
-      "command": "sh",
-      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/api-search-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-api: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/api-search-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
-    },
-    "graphify-app": {
-      "command": "sh",
-      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/app-search-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-app: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/app-search-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
-    },
-    "graphify-widget": {
-      "command": "sh",
-      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/app-search-widget-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-widget: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/app-search-widget-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
-    },
-    "graphify-docs": {
-      "command": "sh",
-      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/docs-search-widget-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-docs: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/docs-search-widget-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
-    },
-    "graphify-wp": {
-      "command": "sh",
-      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/wordpress-plugin-neuroon-search/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-wp: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/wordpress-plugin-neuroon-search\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
-    },
-    "graphify-engine": {
-      "command": "sh",
-      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/api-search-engine/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-engine: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/api-search-engine\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
-    },
-    "graphify-cdp": {
-      "command": "sh",
-      "args": ["-c", "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/neuroon-customer-api/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-cdp: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/neuroon-customer-api\" >&2; exit 1; }; exec graphify-mcp \"$G\""]
-    },
     "coolify": {
       "command": "sh",
-      "args": ["-c", "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"coolify: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y mcp-remote https://colify.neuroon.ai/mcp --header \"Authorization: Bearer ${COOLIFY_MCP_TOKEN}\""]
+      "args": [
+        "-c",
+        "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"coolify: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y mcp-remote https://colify.neuroon.ai/mcp --header \"Authorization: Bearer ${COOLIFY_MCP_TOKEN}\""
+      ]
     },
     "coolify-ops": {
       "command": "sh",
-      "args": ["-c", "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"coolify-ops: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y @masonator/coolify-mcp@latest"],
+      "args": [
+        "-c",
+        "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"coolify-ops: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y @masonator/coolify-mcp@latest"
+      ],
       "env": {
         "COOLIFY_BASE_URL": "https://colify.neuroon.ai"
       }
     },
+    "gcloud": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "exec npx -y @google-cloud/gcloud-mcp -c \"$HOME/projects/neuroon-ai-context/tools/gcloud-mcp-allow.json\""
+      ]
+    },
+    "graphify-api": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/api-search-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-api: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/api-search-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""
+      ]
+    },
+    "graphify-app": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/app-search-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-app: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/app-search-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""
+      ]
+    },
+    "graphify-cdp": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/neuroon-customer-api/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-cdp: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/neuroon-customer-api\" >&2; exit 1; }; exec graphify-mcp \"$G\""
+      ]
+    },
+    "graphify-commons": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/neuroon-ai-commons/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-commons: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/neuroon-ai-commons\" >&2; exit 1; }; exec graphify-mcp \"$G\""
+      ]
+    },
+    "graphify-docs": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/docs-search-widget-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-docs: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/docs-search-widget-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""
+      ]
+    },
+    "graphify-engine": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/api-search-engine/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-engine: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/api-search-engine\" >&2; exit 1; }; exec graphify-mcp \"$G\""
+      ]
+    },
+    "graphify-widget": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/app-search-widget-neuroon/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-widget: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/app-search-widget-neuroon\" >&2; exit 1; }; exec graphify-mcp \"$G\""
+      ]
+    },
+    "graphify-wp": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "G=\"$HOME/projects/neuroon-ai-context/workspaces/.graphify-data/wordpress-plugin-neuroon-search/graphify-out/graph.json\"; [ -f \"$G\" ] || { echo \"graphify-wp: no existe $G - reconstruyelo con ./tools/sync-graph.sh workspaces/wordpress-plugin-neuroon-search\" >&2; exit 1; }; exec graphify-mcp \"$G\""
+      ]
+    },
     "hetzner": {
       "command": "sh",
-      "args": ["-c", "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"hetzner: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y @lazyants/hetzner-mcp-server"]
+      "args": [
+        "-c",
+        "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"hetzner: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y @lazyants/hetzner-mcp-server"
+      ]
+    },
+    "serena": {
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project",
+        "neuroon-ai-context",
+        "--enable-web-dashboard",
+        "false",
+        "--enable-gui-log-window",
+        "false"
+      ]
+    },
+    "serena-api": {
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project",
+        "api-search-neuroon",
+        "--enable-web-dashboard",
+        "false",
+        "--enable-gui-log-window",
+        "false"
+      ]
+    },
+    "serena-app": {
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project",
+        "app-search-neuroon",
+        "--enable-web-dashboard",
+        "false",
+        "--enable-gui-log-window",
+        "false"
+      ]
+    },
+    "serena-cdp": {
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project",
+        "neuroon-customer-api",
+        "--enable-web-dashboard",
+        "false",
+        "--enable-gui-log-window",
+        "false"
+      ]
+    },
+    "serena-commons": {
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project",
+        "neuroon-ai-commons",
+        "--enable-web-dashboard",
+        "false",
+        "--enable-gui-log-window",
+        "false"
+      ]
+    },
+    "serena-docs": {
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project",
+        "docs-search-widget-neuroon",
+        "--enable-web-dashboard",
+        "false",
+        "--enable-gui-log-window",
+        "false"
+      ]
+    },
+    "serena-engine": {
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project",
+        "api-search-engine",
+        "--enable-web-dashboard",
+        "false",
+        "--enable-gui-log-window",
+        "false"
+      ]
+    },
+    "serena-widget": {
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project",
+        "app-search-widget-neuroon",
+        "--enable-web-dashboard",
+        "false",
+        "--enable-gui-log-window",
+        "false"
+      ]
+    },
+    "serena-wp": {
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project",
+        "wordpress-plugin-neuroon-search",
+        "--enable-web-dashboard",
+        "false",
+        "--enable-gui-log-window",
+        "false"
+      ]
     },
     "stripe": {
       "command": "sh",
-      "args": ["-c", "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"stripe: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y mcp-remote https://mcp.stripe.com --header \"Authorization: Bearer ${STRIPE_RESTRICTED_KEY}\""]
-    },
-    "gcloud": {
-      "command": "sh",
-      "args": ["-c", "exec npx -y @google-cloud/gcloud-mcp -c \"$HOME/projects/neuroon-ai-context/tools/gcloud-mcp-allow.json\""]
+      "args": [
+        "-c",
+        "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"stripe: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y mcp-remote https://mcp.stripe.com --header \"Authorization: Bearer ${STRIPE_RESTRICTED_KEY}\""
+      ]
     }
   }
 }

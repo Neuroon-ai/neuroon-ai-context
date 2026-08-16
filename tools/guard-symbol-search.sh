@@ -78,7 +78,7 @@ if re.search(r"grep[^|]*\s-\w*c\w*\b|\|\s*wc\b|--count", cmd):
 if not re.search(
     r"workspaces/(api-search-neuroon|app-search-neuroon|app-search-widget-neuroon"
     r"|docs-search-widget-neuroon|wordpress-plugin-neuroon-search|api-search-engine"
-    r"|neuroon-customer-api)"
+    r"|neuroon-customer-api|neuroon-ai-commons)"
     r"|(?:^|\s)src/(main|test)/",
     cmd,
 ):
@@ -98,6 +98,8 @@ elif "wordpress-plugin-neuroon-search" in cmd:
     repo = "wp"
 elif "api-search-engine" in cmd:
     repo = "engine"
+elif "neuroon-ai-commons" in cmd:
+    repo = "commons"
 elif "neuroon-customer-api" in cmd:
     repo = "cdp"
 

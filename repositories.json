@@ -119,6 +119,21 @@
         "graphify-cdp",
         "serena-cdp"
       ]
+    },
+    {
+      "name": "neuroon-ai-commons",
+      "type": "library",
+      "framework": "java-library",
+      "default_branch": "main",
+      "agent_enabled": true,
+      "harness_ready": false,
+      "harness_notes": "Kernel tecnico compartido (contratos CQS + DomainError canonico). NO es un servicio: es un jar publicado en Artifact Registry (europe-west3-maven.pkg.dev/neuroon-475020/neuroon-maven), sin despliegue ni Coolify. Nacio el 2026-08-16 al extraer del monolito solo lo que era extraible: AuthorizedCommand e IdempotentCommand se quedaron alli porque arrastran OrganizationRole, que es negocio. Consumidores: neuroon-customer-api ya; neuroon-mail-api en E2; api-search-neuroon mas adelante y en su propia PR, porque su DomainError lo usan 350 ficheros.",
+      "graph_ready": false,
+      "graph_notes": "8 interfaces y un record: el grafo sera minusculo por diseno. Si crece mucho, es senal de que el shared kernel esta absorbiendo negocio que no le toca.",
+      "mcp_servers": [
+        "graphify-commons",
+        "serena-commons"
+      ]
     }
   ]
 }

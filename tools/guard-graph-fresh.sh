@@ -79,6 +79,7 @@ case "$TOOL" in
   mcp__graphify-wp__*)     REPO="wordpress-plugin-neuroon-search" ;;
   mcp__graphify-engine__*) REPO="api-search-engine" ;;
   mcp__graphify-cdp__*)    REPO="neuroon-customer-api" ;;
+  mcp__graphify-commons__*) REPO="neuroon-ai-commons" ;;
   # Un graphify-* que este case no conozca es un repo nuevo sin vigilancia:
   # antes caía en el default y su grafo quedaba fuera de la puerta sin que
   # nada lo dijera.
