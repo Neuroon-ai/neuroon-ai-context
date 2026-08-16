@@ -17,6 +17,13 @@
         "COOLIFY_BASE_URL": "https://colify.neuroon.ai"
       }
     },
+    "dataforseo": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"dataforseo: no encuentro $E - las credenciales no se cargaran (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec npx -y dataforseo-mcp-server --mode stdio"
+      ]
+    },
     "gcloud": {
       "command": "sh",
       "args": [
