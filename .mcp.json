@@ -220,6 +220,13 @@
         "false"
       ]
     },
+    "sonarqube": {
+      "command": "sh",
+      "args": [
+        "-c",
+        "E=\"$HOME/projects/neuroon-ai-context/.env\"; [ -f \"$E\" ] || echo \"sonarqube: no encuentro $E - el token no se cargara (ver .env.example)\" >&2; set -a; . \"$E\" 2>/dev/null; set +a; exec docker run --init --pull=always -i --rm -e SONARQUBE_TOKEN -e SONARQUBE_URL sonarsource/sonarqube-mcp"
+      ]
+    },
     "stripe": {
       "command": "sh",
       "args": [

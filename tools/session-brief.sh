@@ -153,7 +153,8 @@ estado_de_la_infra() {
   for entrada in "coolify:COOLIFY_MCP_TOKEN:Coolify oficial (read; exige instancia >=4.1 + toggle MCP)" \
                  "coolify-ops:COOLIFY_ACCESS_TOKEN:Coolify ops StuMason (restart/deploy/logs)" \
                  "hetzner:HETZNER_API_TOKEN:Hetzner Cloud lazyants (snapshot/reboot/firewall)" \
-                 "stripe:STRIPE_RESTRICTED_KEY:Stripe oficial mcp.stripe.com (restricted key, sin conector)"; do
+                 "stripe:STRIPE_RESTRICTED_KEY:Stripe oficial mcp.stripe.com (restricted key, sin conector)" \
+                 "sonarqube:SONARQUBE_TOKEN:SonarQube oficial en contenedor (quality gate, issues y HOTSPOTS de una PR)"; do
     server="${entrada%%:*}"
     var="$(echo "$entrada" | cut -d: -f2)"
     nombre="${entrada#*:*:}"
