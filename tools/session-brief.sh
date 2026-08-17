@@ -138,8 +138,12 @@ estado_de_los_grafos() {
   done
 }
 
-# MCPs de infraestructura (.mcp.json + .env). Solo se mide PRESENCIA del
-# token en el entorno — su valor no se imprime jamás, solo su longitud.
+# MCPs de infraestructura (.mcp.json + .env). Del token solo se mide su
+# PRESENCIA — su valor no se imprime jamás, solo su longitud. Ademas se
+# comprueban los prerrequisitos que hacen fallar el arranque (docker para los
+# que corren en contenedor): con el token puesto y el prerrequisito roto, el
+# server muere y la sesion se queda sin sus tools. Aun asi esto NO prueba que
+# arranque: la prueba es que las tools aparezcan (ToolSearch).
 estado_de_la_infra() {
   local nombre server var largo cuenta ENV_FILE
   if ! command -v jq >/dev/null 2>&1 || ! jq -e . "$MATRIX_ROOT/.mcp.json" >/dev/null 2>&1; then
@@ -168,6 +172,13 @@ estado_de_la_infra() {
     fi
     largo="$(awk -F= -v k="$var" 'index($0, k"=") == 1 {v=substr($0, length(k)+2); gsub(/^['"'"'"]|['"'"'"]$/, "", v); print length(v); exit}' "$ENV_FILE" 2>/dev/null)"
     if [ "${largo:-0}" -gt 0 ]; then
+      # Un token puesto NO implica que el server arranque. Los que corren en
+      # contenedor mueren sin daemon de docker, y el 2026-08-17 eso dejo a la
+      # sesion sin las tools de Sonar mientras el brief las daba por buenas.
+      if [ "$server" = "sonarqube" ] && ! docker info >/dev/null 2>&1; then
+        echo "  - $server: $var relleno, pero el DAEMON DE DOCKER no responde — corre en contenedor, asi que NO levantara"
+        continue
+      fi
       echo "  - $server: declarado y $var relleno en .env — $nombre"
     else
       echo "  - $server: declarado pero $var VACÍO en .env — no levantará; rellena .env (ver .env.example) y reinicia"
@@ -183,6 +194,8 @@ estado_de_la_infra() {
   else
     echo "  - gcloud: NO declarado en .mcp.json"
   fi
+  echo "  (esto mide credenciales y prerrequisitos, no que el server haya arrancado: si necesitas uno, comprueba"
+  echo "   con ToolSearch que sus tools existen antes de darlo por disponible)"
 }
 
 # Los servidores declarados se MIDEN leyendo .mcp.json. Antes había aquí un
@@ -200,7 +213,7 @@ Raíz de código/config (scripts, .mcp.json): $MATRIX_ROOT
 
 $(estado_de_los_grafos)
 
-# MCPs de infraestructura (medido: declaración + token presente)
+# MCPs de infraestructura (medido: declaración + credencial + prerrequisitos)
 
 $(estado_de_la_infra)
 
