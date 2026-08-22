@@ -78,6 +78,7 @@ Esta máquina Matriz instala `claude-mem` a nivel global (transversal a la sesi�
 
 - Backend de búsqueda (`api-search-neuroon`): Java + Spring Boot, Maven (`mvnw`).
 - Backend del CDP (`neuroon-customer-api`, sufijo `cdp`): Java + Spring Boot, Maven (`mvnw`) — mismo stack y mismas leyes que el monolito (hereda su `CLAUDE.md` y `docs/ENGINEERING_RULES.md`); rama por defecto `develop`.
+- **Context-path obligatorio en todo microservicio nuevo** (decisión del fundador, 2026-08-22): cada micro sirve bajo `server.servlet.context-path` = su sufijo en la Matriz (`/cdp`, `/mail`…), el mismo en todos los entornos y fijado en `application.yml`, nunca por perfil. El motivo es operativo: **un solo DNS, un path por servicio** — levantar el siguiente micro es una app en Coolify y un prefijo, no un registro DNS. El monolito no cambia. Se hace cumplir con un test de Surefire (`ContextPathIsMandatoryTest` en el CDP es el modelo), no con esta frase: ver `neuroon-customer-api/docs/adr/ADR-E1-context-path.md`.
 - Backend del motor (`api-search-engine`): Python.
 - Frontends (`app-search-neuroon`, `app-search-widget-neuroon`, `docs-search-widget-neuroon`): TypeScript/Node.js (Next.js, Vite, Docusaurus).
 - Plugin (`wordpress-plugin-neuroon-search`): WordPress/PHP.
